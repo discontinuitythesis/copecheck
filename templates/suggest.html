@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Suggest a Figure — CopeCheck{% endblock %}
+{% block og_title %}Suggest a Figure for the Cope Index{% endblock %}
+{% block og_description %}Know someone who's coping? Suggest them for the CopeCheck Cope Index.{% endblock %}
+{% block og_url %}https://copecheck.com/suggest{% endblock %}
+{% block content %}
+<section class="submit-page">
+  <h1>Suggest a Figure</h1>
+  <p class="tagline">Know someone who's coping hard about the end of work? Tell the Oracle.</p>
+
+  {% if success %}
+  <div class="submit-success">{{ success }}</div>
+  {% endif %}
+
+  {% if error %}
+  <div class="submit-error">{{ error }}</div>
+  {% endif %}
+
+  <form class="submit-form active" method="POST" action="/suggest">
+    <div style="display:none"><input type="text" name="website" tabindex="-1" autocomplete="off" /></div>
+    <div class="form-row">
+      <label class="form-label">Name</label>
+      <input type="text" name="name" placeholder="e.g. Sam Altman" class="input-field" required maxlength="100" />
+    </div>
+    <div class="form-row">
+      <label class="form-label">Why should the Oracle watch them?</label>
+      <textarea name="reason" placeholder="What have they said about AI and jobs? Why are they coping?" rows="4" maxlength="1000" class="input-field" required></textarea>
+    </div>
+    <div class="form-row">
+      <label class="form-label">Example quote or link (optional)</label>
+      <input type="text" name="example" placeholder="A quote, tweet, or article URL" class="input-field" maxlength="1000" />
+    </div>
+    <div class="form-row">
+      <label class="form-label">What does AI stand for?</label>
+      <input type="text" name="captcha" placeholder="Answer to proceed" class="input-field" required />
+    </div>
+    <button type="submit" class="btn-submit">Submit Suggestion</button>
+  </form>
+</section>
+{% endblock %}

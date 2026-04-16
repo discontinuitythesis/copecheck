@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="hero">
+  <h1>The <em>Cope</em> Index</h1>
+  <p class="tagline">Tracking who's coping hardest about the end of work</p>
+  <p class="meter">{{ leaderboard|length }} figures tracked &middot; {{ total }} articles autopsied</p>
+  <form class="search-form" action="/search" method="get">
+    <input type="text" name="q" placeholder="Search headlines, sources, verdicts…" />
+    <button type="submit">Search</button>
+  </form>
+</section>
+
+<!-- COPE OF THE WEEK -->
+{% if cope_of_week %}
+<section class="cope-of-week" id="cope-of-week">
+  <h2 class="section-label">Cope of the Week</h2>
+  <article class="cotw-card">
+    <div class="cotw-badge">COPE OF THE WEEK</div>
+    <header class="card-head">
+      <span class="card-source">{{ cope_of_week.source }}</span>
+      <span class="card-dot">&middot;</span>
+      <span class="card-date">{{ cope_of_week.published | fmtdate or cope_of_week.analysed_at | fmtdate }}</span>
+    </header>
+    <h3 class="card-title">
+      <a href="/v/{{ cope_of_week.slug }}">{{ cope_of_week.title }}</a>
+    </h3>
+    {% if cope_of_week.one_liner %}
+    <p class="card-verdict">{{ cope_of_week.one_liner }}</p>
+    {% endif %}
+    <footer class="card-foot">
+      <a class="card-link" href="/v/{{ cope_of_week.slug }}">Read the autopsy &rarr;</a>
+      <a class="card-link faded" href="{{ cope_of_week.url }}" rel="noopener" target="_blank">Original</a>
+    </footer>
+  </article>
+</section>
+{% endif %}
+
+<!-- COPE INDEX LEADERBOARD -->
+<section class="leaderboard" id="leaderboard">
+  <h2 class="section-label">Cope Index — Live Leaderboard</h2>
+  {% if not leaderboard %}
+    <p class="empty">No figures scored yet. The Oracle is loading its instruments.</p>
+  {% endif %}
+  <div class="lb-grid">
+    {% for fig in leaderboard %}
+    <a href="/figure/{{ fig.id }}" class="lb-card {{ fig.cope_score | copecolor }}">
+      <div class="lb-rank">#{{ loop.index }}</div>
+      <div class="lb-avatar">
+        {% if fig.photo_url %}
+          <img src="{{ fig.photo_url }}" alt="{{ fig.name }}" loading="lazy" />
+        {% else %}
+          <div class="lb-avatar-placeholder">{{ fig.name[0] }}</div>
+        {% endif %}
+      </div>
+      <div class="lb-info">
+        <div class="lb-name">{{ fig.name }}</div>
+        <div class="lb-title">{{ fig.title or fig.category }}</div>
+        {% if fig.last_cope_type %}
+          <div class="lb-cope-type">{{ fig.last_cope_type }}</div>
+        {% endif %}
+        {% if fig.last_quote %}
+          <div class="lb-quote">&ldquo;{{ fig.last_quote[:120] }}{% if fig.last_quote|length > 120 %}&hellip;{% endif %}&rdquo;</div>
+        {% endif %}
+      </div>
+      <div class="lb-score-block">
+        <div class="lb-score {{ fig.cope_score | copecolor }}">{{ "%.0f"|format(fig.cope_score) }}</div>
+        <div class="lb-label">{{ fig.cope_score | copelabel }}</div>
+        {{ fig.cope_score | trendarrow(fig.prev_score) | safe }}
+        {% if fig.total_quotes %}
+          <div class="lb-quotes-count">{{ fig.total_quotes }} quote{{ 's' if fig.total_quotes != 1 }}</div>
+        {% endif %}
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+  <p class="suggest-cta">Know someone who's coping? <a href="/suggest">Suggest a figure &rarr;</a></p>
+</section>
+
+<!-- SUBMIT CTA -->
+<section class="submit-cta-section">
+  <div class="submit-cta-card">
+    <h3>Got an article the Oracle should dissect?</h3>
+    <p>Submit a URL, paste text, or upload a document for a full Oracle verdict.</p>
+    <a href="/submit" class="btn-submit">Submit to the Oracle &rarr;</a>
+  </div>
+</section>
+
+<!-- NEWS FEED -->
+<section class="feed" id="feed">
+  <h2 class="section-label">Oracle Verdicts — Latest</h2>
+  {% if not items %}
+    <p class="empty">No verdicts yet. The Oracle is still sharpening its scalpels.</p>
+  {% endif %}
+  {% for a in items %}
+  <article class="card">
+    <header class="card-head">
+      <span class="card-source">{{ a.source }}</span>
+      <span class="card-dot">&middot;</span>
+      <span class="card-date">{{ a.published | fmtdate or a.analysed_at | fmtdate }}</span>
+    </header>
+    <h3 class="card-title">
+      <a href="/v/{{ a.slug }}">{{ a.title }}</a>
+    </h3>
+    {% if a.one_liner %}
+    <p class="card-verdict">{{ a.one_liner }}</p>
+    {% endif %}
+    <footer class="card-foot">
+      <a class="card-link" href="/v/{{ a.slug }}">Read the autopsy &rarr;</a>
+      <a class="card-link faded" href="{{ a.url }}" rel="noopener" target="_blank">Original</a>
+    </footer>
+  </article>
+  {% endfor %}
+</section>
+{% endblock %}

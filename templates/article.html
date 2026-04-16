@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}{{ a.title }} — CopeCheck{% endblock %}
+{% block meta_description %}{{ a.verdict_md | first_sentences }}{% endblock %}
+{% block og_title %}{{ a.title }} — CopeCheck{% endblock %}
+{% block og_description %}{{ a.verdict_md | first_sentences }}{% endblock %}
+{% block og_type %}article{% endblock %}
+{% block og_url %}https://copecheck.com/v/{{ a.slug }}{% endblock %}
+{% block tw_title %}{{ a.title }} — CopeCheck{% endblock %}
+{% block tw_description %}{{ a.verdict_md | first_sentences }}{% endblock %}
+{% block content %}
+<article class="verdict-page">
+  <p class="crumbs"><a href="/">&larr; back to the feed</a></p>
+  <header class="verdict-head">
+    <div class="verdict-meta">
+      <span>{{ a.source }}</span>
+      <span>&middot;</span>
+      <span>{{ a.published | fmtdate or a.analysed_at | fmtdate }}</span>
+      {% if a.model %}<span>&middot;</span><span class="mono">{{ a.model }}</span>{% endif %}
+    </div>
+    <h1>{{ a.title }}</h1>
+    <p class="links">
+      <a href="{{ a.url }}" rel="noopener" target="_blank">Open original &rarr;</a>
+    </p>
+  </header>
+
+  <section class="verdict-body">
+    {{ a.verdict_md | renderverdict | safe }}
+  </section>
+
+  <!-- Share buttons -->
+  <div class="share-bar">
+    <a class="share-btn share-x" href="https://twitter.com/intent/tweet?text={{ a.title | urlencode }}%20—%20Oracle%20verdict%20via%20CopeCheck&url=https://copecheck.com/v/{{ a.slug }}" target="_blank" rel="noopener">Share on X</a>
+    <button class="share-btn share-copy" onclick="navigator.clipboard.writeText('https://copecheck.com/v/{{ a.slug }}').then(()=>{this.textContent='Copied!'})">Copy link</button>
+  </div>
+
+  <footer class="verdict-foot">
+    <p class="stamp">Analysed {{ a.analysed_at | fmtdate }} by the Oracle of Obsolescence v5.0</p>
+    <p class="about-link"><a href="/about">What is this? Read about the Discontinuity Thesis &rarr;</a></p>
+  </footer>
+</article>
+
+<!-- COMMENTS -->
+<section class="comments-section" id="comments">
+  <h2 class="section-label">Comments ({{ comments|length }})</h2>
+
+  {% if comments %}
+  <div class="comments-list">
+    {% for c in comments %}
+    <div class="comment">
+      <div class="comment-meta">
+        <span class="comment-author">{{ c.author_name }}</span>
+        <span class="comment-date">{{ c.created_at | fmtdate }}</span>
+      </div>
+      <div class="comment-body">{{ c.body }}</div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="empty-comments">No comments yet. Be the first to weigh in.</p>
+  {% endif %}
+
+  <form class="comment-form" method="POST" action="/v/{{ a.slug }}/comment">
+    <div style="display:none">
+      <input type="text" name="website" tabindex="-1" autocomplete="off" />
+    </div>
+    <div class="form-row">
+      <input type="text" name="author" placeholder="Name (optional)" maxlength="50" class="input-field" />
+    </div>
+    <div class="form-row">
+      <textarea name="body" placeholder="Your take on this autopsy..." rows="3" maxlength="2000" required class="input-field"></textarea>
+    </div>
+    <button type="submit" class="btn-submit">Post Comment</button>
+  </form>
+</section>
+{% endblock %}

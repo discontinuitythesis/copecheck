@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Search{% if query %}: {{ query }}{% endif %} — CopeCheck{% endblock %}
+{% block content %}
+<section class="search-page">
+  <h1>Search the Autopsy Archive</h1>
+  <form class="search-form" action="/search" method="get">
+    <input type="text" name="q" value="{{ query }}" placeholder="Search headlines, sources, verdicts…" autofocus />
+    <button type="submit">Search</button>
+  </form>
+
+  {% if query %}
+    <p class="search-meta">{{ results|length }} result{{ 's' if results|length != 1 }} for &ldquo;{{ query }}&rdquo;</p>
+  {% endif %}
+
+  {% if results %}
+  <div class="feed">
+    {% for a in results %}
+    <article class="card">
+      <header class="card-head">
+        <span class="card-source">{{ a.source }}</span>
+        <span class="card-dot">&middot;</span>
+        <span class="card-date">{{ a.published | fmtdate or a.analysed_at | fmtdate }}</span>
+      </header>
+      <h3 class="card-title">
+        <a href="/v/{{ a.slug }}">{{ a.title }}</a>
+      </h3>
+      {% if a.one_liner %}
+      <p class="card-verdict">{{ a.one_liner }}</p>
+      {% endif %}
+      <footer class="card-foot">
+        <a class="card-link" href="/v/{{ a.slug }}">Read the autopsy &rarr;</a>
+        <a class="card-link faded" href="{{ a.url }}" rel="noopener" target="_blank">Original</a>
+      </footer>
+    </article>
+    {% endfor %}
+  </div>
+  {% elif query %}
+    <p class="empty">No results. The Oracle has not yet autopsied anything matching &ldquo;{{ query }}&rdquo;.</p>
+  {% endif %}
+</section>
+{% endblock %}

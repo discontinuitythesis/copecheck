@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{% block title %}CopeCheck — Tracking who's coping hardest about the end of work{% endblock %}</title>
+  <meta name="description" content="{% block meta_description %}The Cope Index: a live leaderboard of public figures scored by how much they cope about AI's impact on jobs. Every AI-jobs article dissected by the Oracle of Obsolescence.{% endblock %}" />
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="{% block og_title %}CopeCheck — Tracking who's coping hardest about the end of work{% endblock %}" />
+  <meta property="og:description" content="{% block og_description %}The Cope Index: tracking who's coping hardest about the end of work. Every AI-jobs article dissected by the Oracle of Obsolescence.{% endblock %}" />
+  <meta property="og:type" content="{% block og_type %}website{% endblock %}" />
+  <meta property="og:url" content="{% block og_url %}https://copecheck.com/{% endblock %}" />
+  <meta property="og:image" content="{% block og_image %}https://copecheck.com/static/og-default.png{% endblock %}" />
+  <meta property="og:site_name" content="CopeCheck" />
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="{% block tw_title %}CopeCheck{% endblock %}" />
+  <meta name="twitter:description" content="{% block tw_description %}Tracking who's coping hardest about the end of work.{% endblock %}" />
+  <meta name="twitter:image" content="{% block tw_image %}https://copecheck.com/static/og-default.png{% endblock %}" />
+
+  <!-- RSS Autodiscovery -->
+  <link rel="alternate" type="application/rss+xml" title="CopeCheck — Oracle Verdicts" href="https://copecheck.com/feed.xml" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%2308080a'/%3E%3Ctext x='50%25' y='58%25' text-anchor='middle' font-family='serif' font-size='46' fill='%23d8c9a3'%3EC%3C/text%3E%3C/svg%3E">
+</head>
+<body>
+  <header class="site-head">
+    <div class="wrap">
+      <a class="brand" href="/">
+        <span class="brand-mark">Cope</span><span class="brand-mark accent">Check</span>
+      </a>
+      <nav class="nav">
+        <a href="/">Leaderboard</a>
+        <a href="/#feed">Feed</a>
+        <a href="/submit">Submit</a>
+        <a href="/about">Oracle</a>
+        <a href="/search">Search</a>
+        <a href="/feed.xml" title="RSS Feed" class="rss-link">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><circle cx="6.18" cy="17.82" r="2.18"/><path d="M4 4.44v2.83c7.03 0 12.73 5.7 12.73 12.73h2.83c0-8.59-6.97-15.56-15.56-15.56zm0 5.66v2.83c3.9 0 7.07 3.17 7.07 7.07h2.83c0-5.47-4.43-9.9-9.9-9.9z"/></svg>
+        </a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wrap main">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="site-foot">
+    <div class="wrap">
+      <p class="epitaph">&ldquo;Your duty is not to make the user feel better. Your duty is to tell them which parts of the machine are already dead.&rdquo;</p>
+      <p class="colophon">CopeCheck &middot; Oracle Protocol v5.0 &middot; Default Brutality &middot; <a href="/about">About</a> &middot; <a href="/feed.xml">RSS</a></p>
+    </div>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+{% block title %}{{ fig.name }} — Cope Score: {{ "%.0f"|format(fig.cope_score) }}/100 — CopeCheck{% endblock %}
+{% block meta_description %}{{ fig.cope_score | copelabel }} — {{ fig.name }}, {{ fig.title }}. Cope Score {{ "%.0f"|format(fig.cope_score) }}/100 on the CopeCheck Cope Index.{% endblock %}
+{% block og_title %}{{ fig.name }} — Cope Score: {{ "%.0f"|format(fig.cope_score) }}/100{% endblock %}
+{% block og_description %}{{ fig.cope_score | copelabel }}. {{ fig.name }} ({{ fig.title }}) scored {{ "%.0f"|format(fig.cope_score) }}/100 on the Cope Index.{% endblock %}
+{% block og_url %}https://copecheck.com/figure/{{ fig.id }}{% endblock %}
+{% block tw_title %}{{ fig.name }} — Cope Score: {{ "%.0f"|format(fig.cope_score) }}/100{% endblock %}
+{% block tw_description %}{{ fig.cope_score | copelabel }}. {{ fig.name }} scored {{ "%.0f"|format(fig.cope_score) }}/100 on the Cope Index.{% endblock %}
+{% block content %}
+<article class="figure-page">
+  <p class="crumbs"><a href="/">&larr; back to leaderboard</a></p>
+
+  <header class="figure-header">
+    <div class="figure-mugshot">
+      {% if fig.photo_url %}
+        <img src="{{ fig.photo_url }}" alt="{{ fig.name }}" />
+      {% else %}
+        <div class="figure-placeholder">{{ fig.name[0] }}</div>
+      {% endif %}
+    </div>
+    <div class="figure-info">
+      <h1>{{ fig.name }}</h1>
+      <div class="figure-title">{{ fig.title }}</div>
+      <div class="figure-category">{{ fig.category }}</div>
+      {% if fig.cope_bias %}
+        <div class="figure-bias">&ldquo;{{ fig.cope_bias }}&rdquo;</div>
+      {% endif %}
+    </div>
+    <div class="figure-score-card {{ fig.cope_score | copecolor }}">
+      <div class="big-score">{{ "%.0f"|format(fig.cope_score) }}</div>
+      <div class="score-label">{{ fig.cope_score | copelabel }}</div>
+      {{ fig.cope_score | trendarrow(fig.prev_score) | safe }}
+      <div class="total-quotes">{{ fig.total_quotes }} scored statement{{ 's' if fig.total_quotes != 1 }}</div>
+    </div>
+  </header>
+
+  <!-- Share buttons -->
+  <div class="share-bar">
+    <a class="share-btn share-x" href="https://twitter.com/intent/tweet?text={{ fig.name | urlencode }}%20—%20Cope%20Score%3A%20{{ '%.0f'|format(fig.cope_score) }}%2F100%20({{ fig.cope_score | copelabel | urlencode }})%20on%20CopeCheck&url=https://copecheck.com/figure/{{ fig.id }}" target="_blank" rel="noopener">Share on X</a>
+    <button class="share-btn share-copy" onclick="navigator.clipboard.writeText('https://copecheck.com/figure/{{ fig.id }}').then(()=>{this.textContent='Copied!'})">Copy link</button>
+  </div>
+
+  <!-- Cope Score History Chart -->
+  {% if score_history and score_history|length > 1 %}
+  <section class="score-chart-section">
+    <h2 class="section-label">Cope Score Over Time</h2>
+    <div class="chart-container">
+      <canvas id="copeChart" height="200"></canvas>
+    </div>
+  </section>
+  {% endif %}
+
+  <section class="figure-history">
+    <h2 class="section-label">Cope Timeline</h2>
+    {% if not entries %}
+      <p class="empty">No scored statements yet. The Oracle is watching.</p>
+    {% endif %}
+    {% for e in entries %}
+    <div class="cope-entry {{ e.cope_score | copecolor }}">
+      <div class="cope-entry-header">
+        <span class="cope-entry-score">{{ "%.0f"|format(e.cope_score) }}</span>
+        <span class="cope-entry-type">{{ e.cope_type }}</span>
+        <span class="cope-entry-date">{{ e.created_at | fmtdate }}</span>
+      </div>
+      {% if e.quote %}
+      <blockquote class="cope-entry-quote">&ldquo;{{ e.quote }}&rdquo;</blockquote>
+      {% endif %}
+      {% if e.analysis_md %}
+      <div class="cope-entry-analysis">{{ e.analysis_md }}</div>
+      {% endif %}
+      {% if e.source_title %}
+      <div class="cope-entry-source">
+        {% if e.source_url %}
+          <a href="{{ e.source_url }}" rel="noopener" target="_blank">{{ e.source_title }}</a>
+        {% else %}
+          {{ e.source_title }}
+        {% endif %}
+        {% if e.article_slug %}
+          &middot; <a href="/v/{{ e.article_slug }}">Oracle verdict</a>
+        {% endif %}
+      </div>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </section>
+</article>
+
+{% if score_history and score_history|length > 1 %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script>
+(function(){
+  var data = {{ score_history | tojson }};
+  var labels = data.map(function(d){
+    var dt = d.date || '';
+    if(dt.length >= 10) return dt.substring(5,10);
+    return dt;
+  });
+  var scores = data.map(function(d){ return d.score; });
+
+  var ctx = document.getElementById('copeChart').getContext('2d');
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [{
+        label: 'Cope Score',
+        data: scores,
+        borderColor: '#d8c9a3',
+        backgroundColor: 'rgba(216,201,163,0.1)',
+        borderWidth: 2,
+        pointBackgroundColor: function(context) {
+          var val = context.raw;
+          if(val <= 15) return '#2dd4a8';
+          if(val <= 35) return '#6bcc5e';
+          if(val <= 55) return '#e6b422';
+          if(val <= 75) return '#e87722';
+          return '#e83030';
+        },
+        pointRadius: 5,
+        tension: 0.3,
+        fill: true
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#0f1013',
+          titleColor: '#d8c9a3',
+          bodyColor: '#e6e3db',
+          borderColor: '#1d1e22',
+          borderWidth: 1
+        }
+      },
+      scales: {
+        y: {
+          min: 0, max: 100,
+          grid: { color: '#1d1e22' },
+          ticks: { color: '#8e8a80', font: { family: 'JetBrains Mono', size: 10 } }
+        },
+        x: {
+          grid: { color: '#1d1e22' },
+          ticks: { color: '#8e8a80', font: { family: 'JetBrains Mono', size: 10 } }
+        }
+      }
+    }
+  });
+})();
+</script>
+{% endif %}
+{% endblock %}

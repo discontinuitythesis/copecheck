@@ -1,0 +1,17 @@
+[Unit]
+Description=CopeCheck v2 web server (Cope Index + Oracle of Obsolescence)
+After=network.target
+
+[Service]
+Type=simple
+User=ben
+WorkingDirectory=/home/ben/infra/copecheck
+EnvironmentFile=/home/ben/infra/copecheck/.env
+Environment=PYTHONUNBUFFERED=1
+Environment=COPECHECK_PORT=8096
+ExecStart=/home/ben/infra/copecheck/venv/bin/python3 /home/ben/infra/copecheck/app.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

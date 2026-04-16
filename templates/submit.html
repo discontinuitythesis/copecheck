@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block title %}Submit to the Oracle — CopeCheck{% endblock %}
+{% block og_title %}Submit to the Oracle — CopeCheck{% endblock %}
+{% block og_description %}Submit a URL, paste text, or upload a document for a full Oracle of Obsolescence verdict.{% endblock %}
+{% block og_url %}https://copecheck.com/submit{% endblock %}
+{% block tw_title %}Submit to the Oracle — CopeCheck{% endblock %}
+{% block tw_description %}Submit a URL, paste text, or upload a document for a full Oracle verdict.{% endblock %}
+{% block content %}
+<section class="submit-page">
+  <h1>Submit to the Oracle</h1>
+  <p class="tagline">Paste a URL, drop in text, or upload a document. The Oracle of Obsolescence will deliver its verdict.</p>
+
+  {% if error %}
+  <div class="submit-error">{{ error }}</div>
+  {% endif %}
+
+  <!-- Tabs -->
+  <div class="submit-tabs">
+    <button class="tab-btn active" data-tab="url" onclick="switchTab('url')">URL</button>
+    <button class="tab-btn" data-tab="paste" onclick="switchTab('paste')">Paste Text</button>
+    <button class="tab-btn" data-tab="upload" onclick="switchTab('upload')">Upload File</button>
+  </div>
+
+  <!-- URL Tab -->
+  <form class="submit-form tab-content active" id="tab-url" method="POST" action="/submit">
+    <input type="hidden" name="mode" value="url" />
+    <div style="display:none"><input type="text" name="website" tabindex="-1" autocomplete="off" /></div>
+    <div class="form-row">
+      <label class="form-label">Article URL</label>
+      <input type="url" name="url" placeholder="https://example.com/article-about-ai-jobs" class="input-field" required />
+    </div>
+    <div class="form-row">
+      <label class="form-label">What does AI stand for?</label>
+      <input type="text" name="captcha" placeholder="Answer to proceed" class="input-field" required />
+    </div>
+    <button type="submit" class="btn-submit btn-oracle" id="btn-url">Submit to the Oracle</button>
+  </form>
+
+  <!-- Paste Tab -->
+  <form class="submit-form tab-content" id="tab-paste" method="POST" action="/submit">
+    <input type="hidden" name="mode" value="paste" />
+    <div style="display:none"><input type="text" name="website" tabindex="-1" autocomplete="off" /></div>
+    <div class="form-row">
+      <label class="form-label">Paste article, essay, paper, or any text</label>
+      <textarea name="text" placeholder="Paste the full text here..." rows="10" maxlength="51200" class="input-field" required></textarea>
+      <span class="form-hint">Minimum 100 characters, maximum 50KB</span>
+    </div>
+    <div class="form-row">
+      <label class="form-label">What does AI stand for?</label>
+      <input type="text" name="captcha" placeholder="Answer to proceed" class="input-field" required />
+    </div>
+    <button type="submit" class="btn-submit btn-oracle" id="btn-paste">Submit to the Oracle</button>
+  </form>
+
+  <!-- Upload Tab -->
+  <form class="submit-form tab-content" id="tab-upload" method="POST" action="/submit" enctype="multipart/form-data">
+    <input type="hidden" name="mode" value="upload" />
+    <div style="display:none"><input type="text" name="website" tabindex="-1" autocomplete="off" /></div>
+    <div class="form-row">
+      <label class="form-label">Upload a file (PDF, TXT, DOCX, MD)</label>
+      <input type="file" name="file" accept=".pdf,.txt,.docx,.md" class="input-field file-input" required />
+      <span class="form-hint">Maximum 5MB</span>
+    </div>
+    <div class="form-row">
+      <label class="form-label">What does AI stand for?</label>
+      <input type="text" name="captcha" placeholder="Answer to proceed" class="input-field" required />
+    </div>
+    <button type="submit" class="btn-submit btn-oracle" id="btn-upload">Submit to the Oracle</button>
+  </form>
+
+  <p class="submit-note">The Oracle typically takes 10-30 seconds. You'll be redirected to your verdict when ready. <br/>3 submissions per hour. All verdicts get a permanent URL you can share.</p>
+</section>
+
+<script>
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  document.querySelector('[data-tab="'+tab+'"]').classList.add('active');
+  document.getElementById('tab-'+tab).classList.add('active');
+}
+// Processing spinner on submit
+document.querySelectorAll('.submit-form').forEach(function(form){
+  form.addEventListener('submit', function(){
+    var btn = form.querySelector('.btn-oracle');
+    btn.disabled = true;
+    btn.textContent = 'The Oracle is reading...';
+    btn.classList.add('processing');
+  });
+});
+</script>
+{% endblock %}

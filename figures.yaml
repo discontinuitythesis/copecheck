@@ -1,0 +1,211 @@
+# CopeCheck — Tracked Figures for the Cope Index
+figures:
+  - id: dario-amodei
+    name: Dario Amodei
+    title: "CEO, Anthropic"
+    category: AI Lab CEO
+    photo_url: /static/photos/dario-amodei.png
+    cope_bias: "Sees the discontinuity clearly but can't publicly say it's over"
+    search_queries:
+      - "Dario Amodei AI jobs"
+      - "Dario Amodei automation future"
+      - "Dario Amodei employment workforce"
+
+  - id: sam-altman
+    name: Sam Altman
+    title: "CEO, OpenAI"
+    category: AI Lab CEO
+    photo_url: /static/photos/sam-altman.png
+    cope_bias: null
+    search_queries:
+      - "Sam Altman AI jobs"
+      - "Sam Altman future of work"
+      - "Sam Altman automation employment"
+
+  - id: mark-zuckerberg
+    name: Mark Zuckerberg
+    title: "CEO, Meta"
+    category: Tech CEO
+    photo_url: /static/photos/mark-zuckerberg.png
+    cope_bias: null
+    search_queries:
+      - "Mark Zuckerberg AI jobs"
+      - "Zuckerberg Meta AI workforce"
+      - "Zuckerberg automation"
+
+  - id: satya-nadella
+    name: Satya Nadella
+    title: "CEO, Microsoft"
+    category: Tech CEO
+    photo_url: /static/photos/satya-nadella.png
+    cope_bias: null
+    search_queries:
+      - "Satya Nadella AI jobs"
+      - "Nadella Microsoft AI workforce"
+      - "Nadella copilot employment"
+
+  - id: sundar-pichai
+    name: Sundar Pichai
+    title: "CEO, Google/Alphabet"
+    category: Tech CEO
+    photo_url: /static/photos/sundar-pichai.png
+    cope_bias: null
+    search_queries:
+      - "Sundar Pichai AI jobs"
+      - "Pichai Google AI employment"
+      - "Pichai automation workforce"
+
+  - id: jensen-huang
+    name: Jensen Huang
+    title: "CEO, NVIDIA"
+    category: Tech CEO
+    photo_url: /static/photos/jensen-huang.png
+    cope_bias: null
+    search_queries:
+      - "Jensen Huang AI jobs"
+      - "Jensen Huang automation"
+      - "NVIDIA CEO workforce AI"
+
+  - id: elon-musk
+    name: Elon Musk
+    title: "CEO, xAI / Tesla"
+    category: Tech CEO
+    photo_url: /static/photos/elon-musk.png
+    cope_bias: null
+    search_queries:
+      - "Elon Musk AI jobs"
+      - "Musk automation employment"
+      - "Musk xAI workforce"
+
+  - id: andrew-ng
+    name: Andrew Ng
+    title: "AI Educator / Investor"
+    category: AI Researcher
+    photo_url: /static/photos/andrew-ng.png
+    cope_bias: null
+    search_queries:
+      - "Andrew Ng AI jobs"
+      - "Andrew Ng automation employment"
+      - "Andrew Ng workforce AI"
+
+  - id: yann-lecun
+    name: Yann LeCun
+    title: "Chief AI Scientist, Meta"
+    category: AI Researcher
+    photo_url: /static/photos/yann-lecun.png
+    cope_bias: null
+    search_queries:
+      - "Yann LeCun AI jobs"
+      - "LeCun automation employment"
+      - "LeCun AGI workforce"
+
+  - id: marc-andreessen
+    name: Marc Andreessen
+    title: "Co-founder, a16z"
+    category: VC / Investor
+    photo_url: /static/photos/marc-andreessen.png
+    cope_bias: null
+    search_queries:
+      - "Marc Andreessen AI jobs"
+      - "Andreessen automation workforce"
+      - "a16z AI employment"
+
+  - id: vinod-khosla
+    name: Vinod Khosla
+    title: "Founder, Khosla Ventures"
+    category: VC / Investor
+    photo_url: /static/photos/vinod-khosla.png
+    cope_bias: null
+    search_queries:
+      - "Vinod Khosla AI jobs"
+      - "Khosla automation workforce"
+      - "Khosla AI employment"
+
+  - id: paul-krugman
+    name: Paul Krugman
+    title: "Economist / Columnist"
+    category: Economist
+    photo_url: /static/photos/paul-krugman.png
+    cope_bias: null
+    search_queries:
+      - "Paul Krugman AI jobs"
+      - "Krugman automation employment"
+      - "Krugman AI economy"
+
+  - id: larry-summers
+    name: Larry Summers
+    title: "Former US Treasury Secretary"
+    category: Economist
+    photo_url: /static/photos/larry-summers.png
+    cope_bias: null
+    search_queries:
+      - "Larry Summers AI jobs"
+      - "Summers automation employment"
+      - "Summers AI workforce"
+
+  - id: daron-acemoglu
+    name: Daron Acemoglu
+    title: "Economist, MIT (Nobel 2024)"
+    category: Economist
+    photo_url: /static/photos/daron-acemoglu.png
+    cope_bias: null
+    search_queries:
+      - "Daron Acemoglu AI jobs"
+      - "Acemoglu automation employment"
+      - "Acemoglu AI labor"
+
+  - id: tyler-cowen
+    name: Tyler Cowen
+    title: "Economist / Blogger"
+    category: Economist
+    photo_url: /static/photos/tyler-cowen.png
+    cope_bias: null
+    search_queries:
+      - "Tyler Cowen AI jobs"
+      - "Cowen automation employment"
+      - "Cowen AI economy"
+
+  - id: gary-marcus
+    name: Gary Marcus
+    title: "AI Critic / Author"
+    category: Commentator
+    photo_url: /static/photos/gary-marcus.png
+    cope_bias: null
+    search_queries:
+      - "Gary Marcus AI jobs"
+      - "Marcus AI hype employment"
+      - "Marcus automation"
+
+  - id: yuval-harari
+    name: Yuval Noah Harari
+    title: "Historian / Author"
+    category: Commentator
+    photo_url: /static/photos/yuval-harari.png
+    cope_bias: null
+    search_queries:
+      - "Yuval Harari AI jobs"
+      - "Harari useless class"
+      - "Harari automation future"
+
+  - id: kai-fu-lee
+    name: Kai-Fu Lee
+    title: "CEO, Sinovation Ventures"
+    category: AI Researcher
+    photo_url: /static/photos/kai-fu-lee.png
+    cope_bias: null
+    search_queries:
+      - "Kai-Fu Lee AI jobs"
+      - "Kai-Fu Lee automation"
+      - "Kai-Fu Lee employment AI"
+
+
+  - id: demis-hassabis
+    name: Demis Hassabis
+    title: "CEO, Google DeepMind"
+    category: AI Lab CEO
+    photo_url: /static/photos/demis-hassabis.png
+    cope_bias: "Building the bomb but trust me it's for peace"
+    search_queries:
+      - "Demis Hassabis AI jobs"
+      - "Hassabis AGI workforce"
+      - "Hassabis DeepMind automation employment"

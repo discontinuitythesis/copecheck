@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Oracle Verdict — {{ v.title or 'User Submission' }} — CopeCheck{% endblock %}
+{% block meta_description %}{{ v.verdict_md | first_sentences }}{% endblock %}
+{% block og_title %}Oracle Verdict — {{ v.title or 'User Submission' }}{% endblock %}
+{% block og_description %}{{ v.verdict_md | first_sentences }}{% endblock %}
+{% block og_type %}article{% endblock %}
+{% block og_url %}https://copecheck.com/verdict/{{ v.id }}{% endblock %}
+{% block tw_title %}Oracle Verdict — {{ v.title or 'User Submission' }}{% endblock %}
+{% block tw_description %}{{ v.verdict_md | first_sentences }}{% endblock %}
+{% block content %}
+<article class="verdict-page">
+  <p class="crumbs"><a href="/">&larr; back to the feed</a> &middot; <a href="/submit">Submit another</a></p>
+  <header class="verdict-head">
+    <div class="verdict-meta">
+      <span>{{ v.source or 'User Submission' }}</span>
+      <span>&middot;</span>
+      <span>{{ v.created_at | fmtdate }}</span>
+    </div>
+    <h1>{{ v.title or 'Oracle Verdict' }}</h1>
+    {% if v.url %}
+    <p class="links"><a href="{{ v.url }}" rel="noopener" target="_blank">Open original &rarr;</a></p>
+    {% endif %}
+  </header>
+
+  {% if v.text_preview %}
+  <div class="submission-preview">
+    <div class="preview-label">Submitted text (preview)</div>
+    <p>{{ v.text_preview }}</p>
+  </div>
+  {% endif %}
+
+  <section class="verdict-body">
+    {{ v.verdict_md | renderverdict | safe }}
+  </section>
+
+  <!-- Share buttons -->
+  <div class="share-bar">
+    <a class="share-btn share-x" href="https://twitter.com/intent/tweet?text=Oracle%20verdict%20via%20CopeCheck&url=https://copecheck.com/verdict/{{ v.id }}" target="_blank" rel="noopener">Share on X</a>
+    <button class="share-btn share-copy" onclick="navigator.clipboard.writeText('https://copecheck.com/verdict/{{ v.id }}').then(()=>{this.textContent='Copied!'})">Copy link</button>
+  </div>
+
+  <footer class="verdict-foot">
+    <p class="stamp">Analysed {{ v.created_at | fmtdate }} by the Oracle of Obsolescence v5.0</p>
+    <p class="about-link"><a href="/about">What is this? Read about the Discontinuity Thesis &rarr;</a></p>
+  </footer>
+</article>
+{% endblock %}
