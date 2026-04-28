@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Contact — CopeCheck{% endblock %}
+{% block og_title %}Contact the Oracle{% endblock %}
+{% block og_description %}Got feedback, a tip, or just want to tell the Oracle it's wrong? Get in touch.{% endblock %}
+{% block og_url %}https://copecheck.com/contact{% endblock %}
+{% block canonical %}https://copecheck.com/contact{% endblock %}
+{% block hreflang %}https://copecheck.com/contact{% endblock %}
+{% block content %}
+<section class="submit-page">
+  <h1>Contact</h1>
+  <p class="tagline">Got feedback, a tip, or just want to tell the Oracle it&#8217;s wrong? Get in touch.</p>
+
+  {% if success %}
+  <div class="submit-success">{{ success }}</div>
+  {% endif %}
+
+  {% if error %}
+  <div class="submit-error">{{ error }}</div>
+  {% endif %}
+
+  {% if not success %}
+  <form class="submit-form active" method="POST" action="/contact">
+    <div style="display:none"><input type="text" name="website" tabindex="-1" autocomplete="off" /></div>
+    <div class="form-row">
+      <label class="form-label">Name <span style="color:#666;font-weight:normal">(optional)</span></label>
+      <input type="text" name="name" placeholder="Who are you?" class="input-field" maxlength="100" />
+    </div>
+    <div class="form-row">
+      <label class="form-label">Email <span style="color:#666;font-weight:normal">(optional)</span></label>
+      <input type="email" name="email" placeholder="If you want a reply" class="input-field" maxlength="200" />
+    </div>
+    <div class="form-row">
+      <label class="form-label">Message</label>
+      <textarea name="message" placeholder="Speak your mind." rows="5" maxlength="5000" class="input-field" required></textarea>
+    </div>
+    <button type="submit" class="btn-submit">Send Message</button>
+  </form>
+  {% endif %}
+</section>
+{% endblock %}

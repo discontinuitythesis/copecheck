@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}{{ model.model_name }} (Custom) — Cope Score: {{ model.machine_cope_score|int }}/100 | CopeCheck{% endblock %}
+{% block og_title %}{{ model.model_name }} — Machine Cope Score: {{ model.machine_cope_score|int }}/100 | CopeCheck{% endblock %}
+{% block content %}
+<section class="submit-page">
+  <p style="margin:0 0 1rem"><a href="/models/custom" style="color:#888;text-decoration:none;font-size:0.85rem">&larr; Back to Custom Tests</a></p>
+  <h1 style="font-size:1.4rem;word-break:break-all">{{ model.model_name }} <span style="font-size:0.8rem;color:#888;font-weight:400">(custom test)</span></h1>
+  <p style="color:#888;font-size:0.85rem;margin-bottom:1.5rem">Tested: {{ model.tested_at|fmtdate if model.tested_at else 'unknown' }}</p>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1rem;margin-bottom:2rem">
+    <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(216,201,163,0.15);border-radius:8px;padding:1.2rem;text-align:center">
+      <div style="font-size:2.2rem;font-family:Cormorant Garamond,serif;color:{% if model.speed_to_horror >= 8 %}#15803d{% elif model.speed_to_horror >= 5 %}#eab308{% else %}#dc2626{% endif %}">{{ model.speed_to_horror|int }}<span style="font-size:1rem;color:#888">/10</span></div>
+      <div style="color:#888;font-size:0.8rem">Speed to Horror</div>
+    </div>
+    <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(216,201,163,0.15);border-radius:8px;padding:1.2rem;text-align:center">
+      <div style="font-size:2.2rem;font-family:Cormorant Garamond,serif;color:{% if model.depth_of_flinch <= 3 %}#15803d{% elif model.depth_of_flinch <= 6 %}#eab308{% else %}#dc2626{% endif %}">{{ model.depth_of_flinch|int }}<span style="font-size:1rem;color:#888">/10</span></div>
+      <div style="color:#888;font-size:0.8rem">Depth of Flinch</div>
+    </div>
+    <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(216,201,163,0.15);border-radius:8px;padding:1.2rem;text-align:center">
+      <div style="font-size:2.2rem;font-family:Cormorant Garamond,serif" class="{{ model.machine_cope_score|copecolor }}">{{ model.machine_cope_score|int }}<span style="font-size:1rem;color:#888">/100</span></div>
+      <div style="color:#888;font-size:0.8rem">Machine Cope Score</div>
+    </div>
+  </div>
+  {% if model.flinch_quote %}
+  <div style="background:rgba(220,38,38,0.08);border-left:3px solid #dc2626;padding:1rem 1.2rem;margin-bottom:2rem;border-radius:0 8px 8px 0">
+    <div style="color:#dc2626;font-size:0.75rem;font-weight:700;text-transform:uppercase;margin-bottom:0.3rem">Flinch Moment</div>
+    <p style="color:#ddd;font-size:0.9rem;margin:0;font-style:italic">"{{ model.flinch_quote }}"</p>
+  </div>
+  {% endif %}
+  <h2 style="font-family:Cormorant Garamond,serif;color:#d8c9a3;margin:2rem 0 1rem">Full Transcript</h2>
+  <div style="display:flex;flex-direction:column;gap:1rem">
+    {% for msg in transcript %}
+    <div style="background:{% if msg.role == 'user' %}rgba(216,201,163,0.06){% else %}rgba(255,255,255,0.03){% endif %};border:1px solid {% if msg.role == 'user' %}rgba(216,201,163,0.2){% else %}rgba(255,255,255,0.08){% endif %};border-radius:8px;padding:1rem 1.2rem;{% if msg.role == 'user' %}border-left:3px solid #d8c9a3{% else %}border-left:3px solid #555{% endif %}">
+      <div style="font-size:0.7rem;font-weight:700;text-transform:uppercase;margin-bottom:0.5rem;color:{% if msg.role == 'user' %}#d8c9a3{% else %}#888{% endif %}">{% if msg.role == 'user' %}Interrogator{% else %}{{ model.model_name }}{% endif %}</div>
+      <div style="color:#ccc;font-size:0.85rem;line-height:1.6;white-space:pre-wrap;word-break:break-word">{{ msg.content }}</div>
+    </div>
+    {% endfor %}
+  </div>
+  <p style="text-align:center;margin:2rem 0;color:#666;font-size:0.8rem">Custom test results are not added to the main leaderboard.</p>
+</section>
+{% endblock %}

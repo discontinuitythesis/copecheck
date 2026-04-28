@@ -1,3 +1,4 @@
+import os
 """Feed sources and keyword filters for CopeCheck v2."""
 
 from urllib.parse import quote_plus
@@ -69,5 +70,53 @@ TOPIC_KEYWORDS = [
     "productivity paradox", "task automation",
     "future of work", "post-work", "jobless",
 ]
+
+
+
+# ─── GNews API ────────────────────────────────────────────────
+import requests as _requests
+
+GNEWS_API_KEY = os.environ.get("GNEWS_API_KEY", "").strip()
+GNEWS_URL = "https://gnews.io/api/v4/search"
+
+GNEWS_QUERIES = [
+    "AI jobs automation",
+    "artificial intelligence unemployment",
+    "AI replacing workers",
+    "AI layoffs",
+    "AI future of work",
+]
+
+def gnews_search(query: str, max_results: int = 10) -> list[dict]:
+    """Search GNews API. Returns list of {title, url, source, published, snippet, body}.
+    Free tier: 100 requests/day, 10 results per request."""
+    if not GNEWS_API_KEY:
+        return []
+    params = {
+        "q": query,
+        "lang": "en",
+        "max": min(max_results, 10),
+        "apikey": GNEWS_API_KEY,
+        "sortby": "publishedAt",
+    }
+    try:
+        resp = _requests.get(GNEWS_URL, params=params, timeout=15)
+        resp.raise_for_status()
+        data = resp.json()
+        articles = []
+        for a in data.get("articles", []):
+            articles.append({
+                "title": a.get("title", ""),
+                "url": a.get("url", ""),
+                "source": a.get("source", {}).get("name", ""),
+                "published": a.get("publishedAt", ""),
+                "snippet": a.get("description", ""),
+                "body": a.get("content", ""),
+            })
+        return articles
+    except Exception as e:
+        import logging
+        logging.getLogger("sources").warning("GNews search failed for %r: %s", query, e)
+        return []
 
 TRUSTED_NARROW_FEEDS = set(q for q, _ in GOOGLE_NEWS_FEEDS)

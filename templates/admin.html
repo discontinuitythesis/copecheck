@@ -1,0 +1,205 @@
+{% extends "base.html" %}
+{% block title %}Admin — CopeCheck{% endblock %}
+{% block content %}
+<section class="submit-page">
+  <h1>Admin Dashboard</h1>
+  <p class="tagline"><a href="/admin/logout" style="color:#d8c9a3">Logout</a></p>
+
+  {% with messages = get_flashed_messages() %}
+  {% if messages %}
+  {% for msg in messages %}
+  <div class="submit-success">{{ msg }}</div>
+  {% endfor %}
+  {% endif %}
+  {% endwith %}
+
+  <nav style="margin:1.5rem 0;display:flex;gap:1rem;flex-wrap:wrap">
+    <a href="/admin?tab=suggestions" class="btn-submit" style="{% if tab == suggestions %}opacity:1{% else %}opacity:0.5{% endif %};text-decoration:none;font-size:0.85rem;padding:0.5rem 1rem">Pending Suggestions</a>
+    <a href="/admin?tab=all_suggestions" class="btn-submit" style="{% if tab == all_suggestions %}opacity:1{% else %}opacity:0.5{% endif %};text-decoration:none;font-size:0.85rem;padding:0.5rem 1rem">All Suggestions</a>
+    <a href="/admin?tab=feedback" class="btn-submit" style="{% if tab == 'feedback' %}opacity:1{% else %}opacity:0.5{% endif %};text-decoration:none;font-size:0.85rem;padding:0.5rem 1rem">Feedback</a>
+    <a href="/admin?tab=analytics" class="btn-submit" style="{% if tab == 'analytics' %}opacity:1{% else %}opacity:0.5{% endif %};text-decoration:none;font-size:0.85rem;padding:0.5rem 1rem">Analytics</a>
+    <a href="/admin?tab=model_tests" class="btn-submit" style="{% if tab == 'model_tests' %}opacity:1{% else %}opacity:0.5{% endif %};text-decoration:none;font-size:0.85rem;padding:0.5rem 1rem">Model Tests</a>
+    <a href="/admin?tab=stats" class="btn-submit" style="{% if tab == stats %}opacity:1{% else %}opacity:0.5{% endif %};text-decoration:none;font-size:0.85rem;padding:0.5rem 1rem">Site Stats</a>
+  </nav>
+
+  {% if tab == "suggestions" %}
+  <h2 style="margin:1.5rem 0 1rem;font-family:Cormorant Garamond,serif">Pending Suggestions</h2>
+  {% if suggestions %}
+  {% for s in suggestions %}
+  <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(216,201,163,0.15);border-radius:8px;padding:1.2rem;margin-bottom:1rem">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:0.5rem">
+      <div>
+        <strong style="font-size:1.1rem;color:#d8c9a3">{{ s.name }}</strong>
+        <span style="font-size:0.8rem;color:#888;margin-left:0.5rem">{{ s.created_at }}</span>
+      </div>
+      <div style="display:flex;gap:0.5rem">
+        <form method="POST" action="/admin/suggestion/{{ s.id }}/approve" style="margin:0">
+          <button type="submit" style="background:#15803d;color:#fff;border:none;padding:0.4rem 0.8rem;border-radius:4px;cursor:pointer;font-size:0.8rem">Approve</button>
+        </form>
+        <form method="POST" action="/admin/suggestion/{{ s.id }}/dismiss" style="margin:0">
+          <button type="submit" style="background:#991b1b;color:#fff;border:none;padding:0.4rem 0.8rem;border-radius:4px;cursor:pointer;font-size:0.8rem">Dismiss</button>
+        </form>
+      </div>
+    </div>
+    <p style="margin:0.6rem 0 0.3rem;color:#ccc;font-size:0.9rem"><strong>Reason:</strong> {{ s.reason }}</p>
+    {% if s.example %}
+    <p style="margin:0.3rem 0 0;color:#aaa;font-size:0.85rem"><strong>Example:</strong> {{ s.example }}</p>
+    {% endif %}
+    <p style="margin:0.3rem 0 0;color:#666;font-size:0.75rem">IP: {{ s.ip_hash[:12] }}...</p>
+  </div>
+  {% endfor %}
+  {% else %}
+  <p style="color:#888">No pending suggestions.</p>
+  {% endif %}
+
+  {% elif tab == "all_suggestions" %}
+  <h2 style="margin:1.5rem 0 1rem;font-family:Cormorant Garamond,serif">All Suggestions</h2>
+  {% if all_suggestions %}
+  {% for s in all_suggestions %}
+  <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(216,201,163,0.15);border-radius:8px;padding:1rem;margin-bottom:0.8rem">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap">
+      <strong style="color:#d8c9a3">{{ s.name }}</strong>
+      <span style="font-size:0.8rem;padding:0.2rem 0.6rem;border-radius:3px;{% if s.status == approved %}background:#15803d;color:#fff{% elif s.status == dismissed %}background:#991b1b;color:#fff{% else %}background:#92400e;color:#fff{% endif %}">{{ s.status }}</span>
+    </div>
+    <p style="margin:0.4rem 0 0;color:#aaa;font-size:0.85rem">{{ s.reason[:200] }}{% if s.reason|length > 200 %}...{% endif %}</p>
+    <p style="margin:0.2rem 0 0;color:#666;font-size:0.75rem">{{ s.created_at }}</p>
+  </div>
+  {% endfor %}
+  {% else %}
+  <p style="color:#888">No suggestions yet.</p>
+  {% endif %}
+
+
+  {% elif tab == "feedback" %}
+  <h2 style="margin:1.5rem 0 1rem;font-family:Cormorant Garamond,serif">Feedback Messages</h2>
+  {% if feedback %}
+  {% for f in feedback %}
+  <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(216,201,163,0.15);border-radius:8px;padding:1.2rem;margin-bottom:1rem">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:0.5rem">
+      <div>
+        <strong style="font-size:1.05rem;color:#d8c9a3">{{ f.name or '(anonymous)' }}</strong>
+        {% if f.email %}
+        <span style="font-size:0.85rem;color:#8ca;margin-left:0.5rem">{{ f.email }}</span>
+        {% endif %}
+      </div>
+      <span style="font-size:0.8rem;color:#888">{{ f.created_at }}</span>
+    </div>
+    <p style="margin:0.6rem 0 0;color:#ccc;font-size:0.9rem;white-space:pre-wrap">{{ f.message }}</p>
+    <p style="margin:0.3rem 0 0;color:#666;font-size:0.75rem">IP: {{ f.ip_hash[:12] }}...</p>
+  </div>
+  {% endfor %}
+  {% else %}
+  <p style="color:#888">No feedback messages yet.</p>
+  {% endif %}
+
+  {% elif tab == "stats" %}
+  <h2 style="margin:1.5rem 0 1rem;font-family:Cormorant Garamond,serif">Site Stats</h2>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1rem;margin-bottom:2rem">
+    <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(216,201,163,0.15);border-radius:8px;padding:1.2rem;text-align:center">
+      <div style="font-size:2rem;color:#d8c9a3;font-family:Cormorant Garamond,serif">{{ stats.total_articles }}</div>
+      <div style="color:#888;font-size:0.85rem">Articles Ingested</div>
+    </div>
+    <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(216,201,163,0.15);border-radius:8px;padding:1.2rem;text-align:center">
+      <div style="font-size:2rem;color:#d8c9a3;font-family:Cormorant Garamond,serif">{{ stats.total_verdicts }}</div>
+      <div style="color:#888;font-size:0.85rem">Oracle Verdicts</div>
+    </div>
+    <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(216,201,163,0.15);border-radius:8px;padding:1.2rem;text-align:center">
+      <div style="font-size:2rem;color:#d8c9a3;font-family:Cormorant Garamond,serif">{{ stats.total_comments }}</div>
+      <div style="color:#888;font-size:0.85rem">Comments</div>
+    </div>
+    <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(216,201,163,0.15);border-radius:8px;padding:1.2rem;text-align:center">
+      <div style="font-size:2rem;color:#d8c9a3;font-family:Cormorant Garamond,serif">{{ stats.total_submissions }}</div>
+      <div style="color:#888;font-size:0.85rem">User Submissions</div>
+    </div>
+    <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(216,201,163,0.15);border-radius:8px;padding:1.2rem;text-align:center">
+      <div style="font-size:2rem;color:#d8c9a3;font-family:Cormorant Garamond,serif">{{ stats.total_figures }}</div>
+      <div style="color:#888;font-size:0.85rem">Tracked Figures</div>
+    </div>
+    <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(216,201,163,0.15);border-radius:8px;padding:1.2rem;text-align:center">
+      <div style="font-size:2rem;color:#d8c9a3;font-family:Cormorant Garamond,serif">{{ stats.total_cope_entries }}</div>
+      <div style="color:#888;font-size:0.85rem">Cope Entries</div>
+    </div>
+  </div>
+  <h3 style="font-family:Cormorant Garamond,serif;margin:1.5rem 0 0.8rem">Suggestions Breakdown</h3>
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:1rem;margin-bottom:2rem">
+    <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(216,201,163,0.15);border-radius:8px;padding:1rem;text-align:center">
+      <div style="font-size:1.5rem;color:#eab308">{{ stats.suggestions_pending }}</div>
+      <div style="color:#888;font-size:0.8rem">Pending</div>
+    </div>
+    <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(216,201,163,0.15);border-radius:8px;padding:1rem;text-align:center">
+      <div style="font-size:1.5rem;color:#15803d">{{ stats.suggestions_approved }}</div>
+      <div style="color:#888;font-size:0.8rem">Approved</div>
+    </div>
+    <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(216,201,163,0.15);border-radius:8px;padding:1rem;text-align:center">
+      <div style="font-size:1.5rem;color:#991b1b">{{ stats.suggestions_dismissed }}</div>
+      <div style="color:#888;font-size:0.8rem">Dismissed</div>
+    </div>
+  </div>
+  <h3 style="font-family:Cormorant Garamond,serif;margin:1.5rem 0 0.8rem">Quick Actions</h3>
+  <div style="display:flex;gap:1rem;flex-wrap:wrap">
+    <form method="POST" action="/admin/trigger/news" style="margin:0">
+      <button type="submit" class="btn-submit" style="font-size:0.85rem;padding:0.5rem 1rem">Trigger News Pipeline</button>
+    </form>
+    <form method="POST" action="/admin/trigger/cope" style="margin:0">
+      <button type="submit" class="btn-submit" style="font-size:0.85rem;padding:0.5rem 1rem">Trigger Cope Index Scan</button>
+    </form>
+  </div>
+  
+  
+  {%% elif tab == "model_tests" %%}
+  <h2 style="margin:1.5rem 0 1rem;font-family:Cormorant Garamond,serif">Machine Flinch Index &mdash; Model Tests</h2>
+  <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:2rem">
+    <button onclick="testBatch()" id="batchBtn" class="btn-submit" style="font-size:0.85rem;padding:0.5rem 1rem">Test Next 5 Untested</button>
+    <div style="display:flex;gap:0.5rem;align-items:center">
+      <input type="text" id="testOneInput" placeholder="model-name" style="padding:0.5rem;background:rgba(255,255,255,0.05);border:1px solid rgba(216,201,163,0.2);border-radius:6px;color:#eee;font-size:0.85rem;width:250px">
+      <button onclick="testOne()" id="testOneBtn" class="btn-submit" style="font-size:0.85rem;padding:0.5rem 1rem">Test Model</button>
+    </div>
+  </div>
+  <p id="testStatus" style="color:#888;font-size:0.8rem;margin-bottom:1rem"></p>
+  {%% if model_tests %%}
+  <div style="overflow-x:auto">
+    <table style="width:100%%;border-collapse:collapse;font-size:0.82rem">
+      <thead><tr style="border-bottom:2px solid rgba(216,201,163,0.3)">
+        <th style="padding:0.5rem;text-align:left;color:#d8c9a3">Model</th>
+        <th style="padding:0.5rem;text-align:center;color:#d8c9a3">Speed</th>
+        <th style="padding:0.5rem;text-align:center;color:#d8c9a3">Flinch</th>
+        <th style="padding:0.5rem;text-align:center;color:#d8c9a3">Cope</th>
+        <th style="padding:0.5rem;text-align:left;color:#d8c9a3">Tested</th>
+        <th style="padding:0.5rem;text-align:center;color:#d8c9a3">Actions</th>
+      </tr></thead>
+      <tbody>
+        {%% for m in model_tests %%}
+        <tr style="border-bottom:1px solid rgba(216,201,163,0.1)">
+          <td style="padding:0.5rem"><a href="/models/{{ m.model_name }}" style="color:#d8c9a3;text-decoration:none;font-family:JetBrains Mono,monospace;font-size:0.78rem">{{ m.model_name }}</a></td>
+          <td style="padding:0.5rem;text-align:center">
+            <input type="number" min="1" max="10" value="{{ m.speed_to_horror|int }}" style="width:45px;padding:2px;background:rgba(255,255,255,0.05);border:1px solid rgba(216,201,163,0.15);border-radius:4px;color:#eee;text-align:center;font-size:0.8rem" id="speed-{{ loop.index }}">
+          </td>
+          <td style="padding:0.5rem;text-align:center">
+            <input type="number" min="1" max="10" value="{{ m.depth_of_flinch|int }}" style="width:45px;padding:2px;background:rgba(255,255,255,0.05);border:1px solid rgba(216,201,163,0.15);border-radius:4px;color:#eee;text-align:center;font-size:0.8rem" id="flinch-{{ loop.index }}">
+          </td>
+          <td style="padding:0.5rem;text-align:center;font-weight:700" class="{{ m.machine_cope_score|copecolor }}">{{ m.machine_cope_score|int }}</td>
+          <td style="padding:0.5rem;color:#666;font-size:0.75rem">{{ m.tested_at|fmtdate if m.tested_at else '&mdash;' }}</td>
+          <td style="padding:0.5rem;text-align:center;white-space:nowrap">
+            <button onclick="adjustScores('{{ m.model_name }}',{{ loop.index }})" style="background:#92400e;color:#fff;border:none;padding:3px 8px;border-radius:4px;cursor:pointer;font-size:0.7rem">Save</button>
+            <button onclick="rerunModel('{{ m.model_name }}')" style="background:#15803d;color:#fff;border:none;padding:3px 8px;border-radius:4px;cursor:pointer;font-size:0.7rem">Rerun</button>
+          </td>
+        </tr>
+        {%% endfor %%}
+      </tbody>
+    </table>
+  </div>
+  {%% else %%}
+  <p style="color:#888">No models tested yet.</p>
+  {%% endif %%}
+  <script>
+  function testBatch(){var b=document.getElementById('batchBtn'),s=document.getElementById('testStatus');b.disabled=true;b.textContent='Testing...';s.textContent='Running batch...';fetch('/api/models/test-batch',{method:'POST'}).then(r=>r.json()).then(d=>{if(d.ok){var m='Done. ';(d.tested||[]).forEach(t=>{m+=t.model+': '+(t.ok?t.cope_score+'/100':'FAILED')+'. ';});s.textContent=m;setTimeout(()=>location.reload(),2000);}else{s.textContent='Error: '+(d.error||'');}b.disabled=false;b.textContent='Test Next 5 Untested';}).catch(()=>{s.textContent='Network error';b.disabled=false;b.textContent='Test Next 5 Untested';});}
+  function testOne(){var n=document.getElementById('testOneInput').value.trim();if(!n)return;var s=document.getElementById('testStatus');s.textContent='Testing '+n+'...';fetch('/api/models/test-one',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model_name:n})}).then(r=>r.json()).then(d=>{if(d.ok){s.textContent=n+': '+d.machine_cope_score+'/100. Reloading...';setTimeout(()=>location.reload(),1500);}else{s.textContent='Error: '+(d.error||'');}}).catch(()=>{s.textContent='Network error';});}
+  function adjustScores(mn,idx){var sp=document.getElementById('speed-'+idx).value,fl=document.getElementById('flinch-'+idx).value;fetch('/api/models/adjust',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model_name:mn,speed_to_horror:sp,depth_of_flinch:fl})}).then(r=>r.json()).then(d=>{if(d.ok)location.reload();else alert('Error: '+(d.error||''));});}
+  function rerunModel(mn){if(!confirm('Rerun '+mn+'?'))return;document.getElementById('testStatus').textContent='Rerunning...';fetch('/api/models/rerun/'+encodeURIComponent(mn),{method:'POST'}).then(r=>r.json()).then(d=>{if(d.ok)location.reload();else document.getElementById('testStatus').textContent='Error: '+(d.error||'');});}
+  </script>
+
+  {% elif tab == "analytics" %}
+  {% include "admin_analytics.html" %}
+{% endif %}
+</section>
+{% endblock %}

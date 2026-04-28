@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Instant Cope Score — CopeCheck{% endblock %}
+{% block og_title %}Instant Cope Score — CopeCheck{% endblock %}
+{% block og_description %}Enter any public figure's name and get a live cope score. The Oracle researches their AI/jobs statements and delivers a verdict in seconds.{% endblock %}
+{% block og_url %}https://copecheck.com/instant{% endblock %}
+{% block canonical %}https://copecheck.com/instant{% endblock %}
+{% block hreflang %}https://copecheck.com/instant{% endblock %}
+{% block content %}
+<section class="submit-page">
+  <h1>Instant <em>Cope</em> Score</h1>
+  <p class="tagline">Enter any public figure's name. The Oracle will research their public statements on AI &amp; jobs, then deliver a cope score in real time.</p>
+  <p class="disclaimer">Works best for public figures with documented views on AI. Takes 15-30 seconds (two API calls).</p>
+
+  {% if error %}
+  <div class="submit-error">{{ error }}</div>
+  {% endif %}
+
+  <form class="submit-form active" method="POST" action="/instant" id="instant-form">
+    <div style="display:none"><input type="text" name="website" tabindex="-1" autocomplete="off" /></div>
+    <div class="form-row">
+      <label class="form-label">Public figure's name</label>
+      <input type="text" name="name" placeholder="e.g. Tim Cook, Bill Gates, Marc Andreessen" class="input-field" required minlength="3" maxlength="100" id="instant-name" />
+    </div>
+    <button type="submit" class="btn-submit" id="instant-btn">Consult the Oracle</button>
+  </form>
+
+  <div class="instant-loading" id="instant-loading" style="display:none">
+    <div class="loading-spinner"></div>
+    <p class="loading-text">The Oracle is researching <strong id="loading-name"></strong>...</p>
+    <p class="loading-sub">Step 1: Searching for public statements via Perplexity<br>Step 2: Scoring cope level via the Oracle<br><em>This can take up to 5 minutes, so check back if needed.</em></p>
+  </div>
+
+  {% if recent %}
+  <div class="instant-recent">
+    <h3 class="section-label">Recent Instant Scores</h3>
+    <div class="lb-grid">
+      {% for s in recent %}
+      <a href="/instant/{{ s.slug }}" class="lb-card {{ s.cope_score | copecolor }}">
+        <div class="lb-info">
+          <div class="lb-name">{{ s.name }}</div>
+          <div class="lb-title">Instant Score</div>
+        </div>
+        <div class="lb-score-block">
+          <div class="lb-score {{ s.cope_score | copecolor }}">{{ "%.0f"|format(s.cope_score) }}</div>
+          <div class="lb-label">{{ s.cope_score | copelabel }}</div>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+</section>
+
+<script>
+document.getElementById('instant-form').addEventListener('submit', function(e) {
+  var name = document.getElementById('instant-name').value.trim();
+  if (name.length < 3) return;
+  document.getElementById('instant-btn').disabled = true;
+  document.getElementById('instant-btn').textContent = 'Consulting...';
+  document.getElementById('instant-loading').style.display = 'block';
+  document.getElementById('loading-name').textContent = name;
+  document.getElementById('instant-form').style.display = 'none';
+});
+</script>
+{% endblock %}

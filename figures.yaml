@@ -209,3 +209,14 @@ figures:
       - "Demis Hassabis AI jobs"
       - "Hassabis AGI workforce"
       - "Hassabis DeepMind automation employment"
+
+  - id: tim-cook
+    name: Tim Cook
+    title: "CEO, Apple"
+    category: Tech CEO
+    photo_url: /static/photos/tim-cook.png
+    cope_bias: "Frames AI as just another feature update — the App Store of denial"
+    search_queries:
+      - "Tim Cook AI jobs"
+      - "Tim Cook Apple AI workforce"
+      - "Tim Cook automation employment"

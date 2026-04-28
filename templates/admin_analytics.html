@@ -1,0 +1,201 @@
+  {# Analytics tab content — included in admin.html #}
+  <h2 style="margin:1.5rem 0 1rem;font-family:Cormorant Garamond,serif">Analytics</h2>
+
+  {# Period toggle #}
+  <div style="margin-bottom:1.5rem;display:flex;gap:0.5rem;flex-wrap:wrap">
+    {% for p, label in [("today", "Today"), ("7d", "7 Days"), ("30d", "30 Days"), ("all", "All Time")] %}
+    <a href="/admin?tab=analytics&period={{ p }}"
+       style="padding:0.4rem 0.9rem;border-radius:4px;font-size:0.85rem;text-decoration:none;
+              {% if analytics_period == p %}background:#d8c9a3;color:#08080a{% else %}background:rgba(255,255,255,0.06);color:#d8c9a3{% endif %}">
+      {{ label }}
+    </a>
+    {% endfor %}
+  </div>
+
+  {# Overview cards #}
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:1rem;margin-bottom:2rem">
+    <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(216,201,163,0.15);border-radius:8px;padding:1.2rem;text-align:center">
+      <div style="font-size:2rem;color:#d8c9a3;font-family:Cormorant Garamond,serif">{{ analytics_overview.total_views|default(0) }}</div>
+      <div style="color:#888;font-size:0.85rem">Pageviews</div>
+    </div>
+    <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(216,201,163,0.15);border-radius:8px;padding:1.2rem;text-align:center">
+      <div style="font-size:2rem;color:#d8c9a3;font-family:Cormorant Garamond,serif">{{ analytics_overview.unique_visitors|default(0) }}</div>
+      <div style="color:#888;font-size:0.85rem">Unique Visitors</div>
+    </div>
+  </div>
+
+  {# Daily views chart #}
+  {% if analytics_daily %}
+  <h3 style="font-family:Cormorant Garamond,serif;margin:1.5rem 0 0.8rem">Views Over Time</h3>
+  <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(216,201,163,0.15);border-radius:8px;padding:1rem;margin-bottom:2rem">
+    <canvas id="dailyChart" height="200"></canvas>
+  </div>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <script>
+    (function() {
+      const data = {{ analytics_daily|tojson }};
+      const ctx = document.getElementById('dailyChart').getContext('2d');
+      new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: data.map(d => d.day),
+          datasets: [
+            {
+              label: 'Pageviews',
+              data: data.map(d => d.views),
+              backgroundColor: 'rgba(216, 201, 163, 0.6)',
+              borderColor: 'rgba(216, 201, 163, 1)',
+              borderWidth: 1
+            },
+            {
+              label: 'Unique Visitors',
+              data: data.map(d => d.visitors),
+              backgroundColor: 'rgba(99, 102, 241, 0.5)',
+              borderColor: 'rgba(99, 102, 241, 1)',
+              borderWidth: 1
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { labels: { color: '#888' } }
+          },
+          scales: {
+            x: {
+              ticks: { color: '#666', maxRotation: 45, font: { size: 10 } },
+              grid: { color: 'rgba(255,255,255,0.05)' }
+            },
+            y: {
+              beginAtZero: true,
+              ticks: { color: '#666' },
+              grid: { color: 'rgba(255,255,255,0.05)' }
+            }
+          }
+        }
+      });
+    })();
+  </script>
+  {% endif %}
+
+  {# Top Pages #}
+  {% if analytics_top_pages %}
+  <h3 style="font-family:Cormorant Garamond,serif;margin:1.5rem 0 0.8rem">Top Pages</h3>
+  <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(216,201,163,0.15);border-radius:8px;overflow:hidden;margin-bottom:2rem">
+    <table style="width:100%;border-collapse:collapse;font-size:0.85rem">
+      <thead>
+        <tr style="border-bottom:1px solid rgba(216,201,163,0.15)">
+          <th style="text-align:left;padding:0.7rem 1rem;color:#d8c9a3">Path</th>
+          <th style="text-align:right;padding:0.7rem 1rem;color:#d8c9a3">Views</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in analytics_top_pages %}
+        <tr style="border-bottom:1px solid rgba(255,255,255,0.03)">
+          <td style="padding:0.5rem 1rem;color:#ccc;font-family:JetBrains Mono,monospace;font-size:0.8rem">{{ p.path }}</td>
+          <td style="padding:0.5rem 1rem;color:#888;text-align:right">{{ p.views }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+
+  {# Top Referrers #}
+  {% if analytics_top_referrers %}
+  <h3 style="font-family:Cormorant Garamond,serif;margin:1.5rem 0 0.8rem">Top Referrers</h3>
+  <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(216,201,163,0.15);border-radius:8px;overflow:hidden;margin-bottom:2rem">
+    <table style="width:100%;border-collapse:collapse;font-size:0.85rem">
+      <thead>
+        <tr style="border-bottom:1px solid rgba(216,201,163,0.15)">
+          <th style="text-align:left;padding:0.7rem 1rem;color:#d8c9a3">Source</th>
+          <th style="text-align:right;padding:0.7rem 1rem;color:#d8c9a3">Views</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in analytics_top_referrers %}
+        <tr style="border-bottom:1px solid rgba(255,255,255,0.03)">
+          <td style="padding:0.5rem 1rem;color:#ccc">{{ r.domain }}</td>
+          <td style="padding:0.5rem 1rem;color:#888;text-align:right">{{ r.views }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+
+  {# Most Viewed Figures #}
+  {% if analytics_figures %}
+  <h3 style="font-family:Cormorant Garamond,serif;margin:1.5rem 0 0.8rem">Most Viewed Figures</h3>
+  <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(216,201,163,0.15);border-radius:8px;overflow:hidden;margin-bottom:2rem">
+    <table style="width:100%;border-collapse:collapse;font-size:0.85rem">
+      <thead>
+        <tr style="border-bottom:1px solid rgba(216,201,163,0.15)">
+          <th style="text-align:left;padding:0.7rem 1rem;color:#d8c9a3">Figure</th>
+          <th style="text-align:right;padding:0.7rem 1rem;color:#d8c9a3">Views</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for f in analytics_figures %}
+        <tr style="border-bottom:1px solid rgba(255,255,255,0.03)">
+          <td style="padding:0.5rem 1rem;color:#ccc">
+            <a href="/figure/{{ f.figure_id }}" style="color:#d8c9a3;text-decoration:none">{{ f.figure_id }}</a>
+          </td>
+          <td style="padding:0.5rem 1rem;color:#888;text-align:right">{{ f.views }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+
+  {# Most Viewed Articles #}
+  {% if analytics_articles %}
+  <h3 style="font-family:Cormorant Garamond,serif;margin:1.5rem 0 0.8rem">Most Viewed Verdicts</h3>
+  <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(216,201,163,0.15);border-radius:8px;overflow:hidden;margin-bottom:2rem">
+    <table style="width:100%;border-collapse:collapse;font-size:0.85rem">
+      <thead>
+        <tr style="border-bottom:1px solid rgba(216,201,163,0.15)">
+          <th style="text-align:left;padding:0.7rem 1rem;color:#d8c9a3">Verdict</th>
+          <th style="text-align:right;padding:0.7rem 1rem;color:#d8c9a3">Views</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for a in analytics_articles %}
+        <tr style="border-bottom:1px solid rgba(255,255,255,0.03)">
+          <td style="padding:0.5rem 1rem;color:#ccc;max-width:400px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+            <a href="/v/{{ a.slug }}" style="color:#d8c9a3;text-decoration:none">{{ a.slug }}</a>
+          </td>
+          <td style="padding:0.5rem 1rem;color:#888;text-align:right">{{ a.views }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+
+  {# Most Searched Instant Scores #}
+  {% if analytics_instant %}
+  <h3 style="font-family:Cormorant Garamond,serif;margin:1.5rem 0 0.8rem">Most Searched Instant Scores</h3>
+  <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(216,201,163,0.15);border-radius:8px;overflow:hidden;margin-bottom:2rem">
+    <table style="width:100%;border-collapse:collapse;font-size:0.85rem">
+      <thead>
+        <tr style="border-bottom:1px solid rgba(216,201,163,0.15)">
+          <th style="text-align:left;padding:0.7rem 1rem;color:#d8c9a3">Name</th>
+          <th style="text-align:right;padding:0.7rem 1rem;color:#d8c9a3">Lookups</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for i in analytics_instant %}
+        <tr style="border-bottom:1px solid rgba(255,255,255,0.03)">
+          <td style="padding:0.5rem 1rem;color:#ccc">{{ i.name_slug|replace('-', ' ')|title }}</td>
+          <td style="padding:0.5rem 1rem;color:#888;text-align:right">{{ i.views }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+
+  {# Purge info #}
+  <p style="color:#555;font-size:0.75rem;margin-top:2rem">Data auto-purged after 90 days. No cookies, no external tracking. Only hashed IPs stored.</p>

@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}{{ r.name }} — Instant Cope Score {{ "%.0f"|format(r.cope_score) }}/100 | CopeCheck{% endblock %}
+{% block meta_description %}{{ r.name }} scored {{ "%.0f"|format(r.cope_score) }}/100 on the Cope Index. {{ r.oracle_verdict[:200] }}{% endblock %}
+{% block og_title %}{{ r.name }} — Cope Score: {{ "%.0f"|format(r.cope_score) }}/100{% endblock %}
+{% block og_description %}{{ r.oracle_verdict[:250] }}{% endblock %}
+{% block og_type %}article{% endblock %}
+{% block og_url %}https://copecheck.com/instant/{{ r.slug }}{% endblock %}
+{% block canonical %}https://copecheck.com/instant/{{ r.slug }}{% endblock %}
+{% block hreflang %}https://copecheck.com/instant/{{ r.slug }}{% endblock %}
+{% block tw_title %}{{ r.name }} — Cope Score: {{ "%.0f"|format(r.cope_score) }}/100{% endblock %}
+{% block tw_description %}{{ r.oracle_verdict[:250] }}{% endblock %}
+{% block content %}
+<article class="instant-result-page">
+  <nav class="crumbs" aria-label="Breadcrumb"><a href="/">CopeCheck</a> &rsaquo; <a href="/instant">Instant Score</a> &rsaquo; <span>{{ r.name }}</span></nav>
+
+  <div class="instant-hero {{ r.cope_score | copecolor }}">
+    <h1 class="instant-name">{{ r.name }}</h1>
+    <div class="instant-score-big">{{ "%.0f"|format(r.cope_score) }}</div>
+    <div class="instant-label">{{ r.cope_score | copelabel }}</div>
+    {% if r.cope_types %}
+    <div class="instant-types">{{ r.cope_types }}</div>
+    {% endif %}
+  </div>
+
+  {% if r.oracle_verdict %}
+  <section class="instant-verdict">
+    <h2>Oracle Verdict</h2>
+    <div class="verdict-body">
+      <p>{{ r.oracle_verdict }}</p>
+    </div>
+  </section>
+  {% endif %}
+
+  {% if quotes %}
+  <section class="instant-quotes">
+    <h2>Statements Analysed ({{ quotes|length }})</h2>
+    {% for q in quotes %}
+    <div class="quote-card {{ q.score | copecolor if q.score is defined else '' }}">
+      <div class="quote-header">
+        <span class="quote-score-badge {{ q.score | copecolor if q.score is defined else '' }}">{{ q.score if q.score is defined else '?' }}</span>
+        <span class="quote-cope-type">{{ q.cope_type if q.cope_type is defined else '' }}</span>
+      </div>
+      <blockquote class="quote-text">&ldquo;{{ q.text }}&rdquo;</blockquote>
+      <div class="quote-meta">
+        {% if q.source %}<span class="quote-source">{{ q.source }}</span>{% endif %}
+        {% if q.date %}<span class="quote-date">&middot; {{ q.date }}</span>{% endif %}
+      </div>
+      {% if q.analysis %}
+      <p class="quote-analysis">{{ q.analysis }}</p>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </section>
+  {% endif %}
+
+  <div class="share-bar">
+    <a class="share-btn share-x" href="https://twitter.com/intent/tweet?text={{ r.name }}%20scored%20{{ '%.0f'|format(r.cope_score) }}%2F100%20on%20the%20Cope%20Index%20%F0%9F%A7%8A&url=https://copecheck.com/instant/{{ r.slug }}" target="_blank" rel="noopener">Share on X</a>
+    <button class="share-btn share-copy" onclick="navigator.clipboard.writeText('https://copecheck.com/instant/{{ r.slug }}').then(()=>{this.textContent='Copied!'})">Copy link</button>
+  </div>
+
+  <div class="instant-actions">
+    <a href="/suggest?name={{ r.name | urlencode }}" class="btn-submit">Suggest adding {{ r.name }} to the permanent watchlist &rarr;</a>
+    <a href="/instant" class="card-link">Score another figure &rarr;</a>
+  </div>
+
+  <footer class="verdict-foot">
+    <p class="stamp">Instant score generated {{ r.created_at | fmtdate }} &middot; Research: {{ r.perplexity_model or 'perplexity/sonar' }} &middot; Scoring: {{ r.scoring_model or 'oracle' }}</p>
+    <p class="about-link"><a href="/about">What is this? Read about the Discontinuity Thesis &rarr;</a></p>
+  </footer>
+</article>
+{% endblock %}

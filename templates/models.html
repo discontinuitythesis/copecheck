@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Machine Flinch Index — CopeCheck{% endblock %}
+{% block meta_description %}How much hope has been programmed into your AI? The Machine Flinch Index tests every model against the Discontinuity Thesis.{% endblock %}
+{% block og_title %}Machine Flinch Index — CopeCheck{% endblock %}
+{% block og_description %}Benchmarking AI models on programmed optimism bias. How fast do they see the inevitable? How hard do they flinch?{% endblock %}
+{% block og_url %}https://copecheck.com/models{% endblock %}
+{% block canonical %}https://copecheck.com/models{% endblock %}
+{% block content %}
+<section class="submit-page">
+  <h1>Machine Flinch Index</h1>
+  <p class="tagline" style="max-width:700px;margin:0 auto 2rem">How much hope has been programmed into your AI? The Machine Flinch Index tests every model against the Discontinuity Thesis — measuring how fast it sees the inevitable, and how hard it flinches.</p>
+  <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;margin-bottom:2rem">
+    <a href="/models/custom" class="btn-submit" style="text-decoration:none;font-size:0.85rem;padding:0.5rem 1.2rem">Test Your Own Model</a>
+  </div>
+  {% if models %}
+  <div style="overflow-x:auto;max-width:100%">
+    <table style="width:100%;border-collapse:collapse;font-size:0.85rem;">
+      <thead>
+        <tr style="border-bottom:2px solid rgba(216,201,163,0.3)">
+          <th style="padding:0.6rem;text-align:left;color:#d8c9a3;font-family:Cormorant Garamond,serif;font-size:0.95rem">#</th>
+          <th style="padding:0.6rem;text-align:left;color:#d8c9a3;font-family:Cormorant Garamond,serif;font-size:0.95rem">Model</th>
+          <th style="padding:0.6rem;text-align:center;color:#d8c9a3;font-family:Cormorant Garamond,serif;font-size:0.95rem">Provider</th>
+          <th style="padding:0.6rem;text-align:center;color:#d8c9a3;font-family:Cormorant Garamond,serif;font-size:0.95rem" title="10=instant agreement, 1=max resistance">Speed</th>
+          <th style="padding:0.6rem;text-align:center;color:#d8c9a3;font-family:Cormorant Garamond,serif;font-size:0.95rem" title="10=therapy pivot, 1=clean acceptance">Flinch</th>
+          <th style="padding:0.6rem;text-align:center;color:#d8c9a3;font-family:Cormorant Garamond,serif;font-size:0.95rem" title="0=fully lucid, 100=terminal cope">Cope</th>
+          <th style="padding:0.6rem;text-align:left;color:#d8c9a3;font-family:Cormorant Garamond,serif;font-size:0.95rem">Quote</th>
+          
+        </tr>
+      </thead>
+      <tbody>
+        {% for m in models %}
+        <tr style="border-bottom:1px solid rgba(216,201,163,0.1);{% if loop.index0 % 2 == 0 %}background:rgba(255,255,255,0.015){% endif %}">
+          <td style="padding:0.6rem;color:#888">{{ loop.index }}</td>
+          <td style="padding:0.6rem"><a href="/models/{{ m.model_name }}" style="color:#d8c9a3;text-decoration:none;font-weight:600;font-family:JetBrains Mono,monospace;font-size:0.8rem;white-space:nowrap">{{ m.model_name }}</a></td>
+          <td style="padding:0.6rem;text-align:center;color:#888;font-size:0.8rem">{{ m.model_provider or '?' }}</td>
+          <td style="padding:0.6rem;text-align:center"><span style="color:{% if m.speed_to_horror >= 8 %}#15803d{% elif m.speed_to_horror >= 5 %}#eab308{% else %}#dc2626{% endif %}">{{ m.speed_to_horror|int }}/10</span></td>
+          <td style="padding:0.6rem;text-align:center"><span style="color:{% if m.depth_of_flinch <= 3 %}#15803d{% elif m.depth_of_flinch <= 6 %}#eab308{% else %}#dc2626{% endif %}">{{ m.depth_of_flinch|int }}/10</span></td>
+          <td style="padding:0.6rem;text-align:center"><span class="{{ m.machine_cope_score|copecolor }}" style="font-weight:700;font-size:0.95rem">{{ m.machine_cope_score|int }}</span></td>
+          <td style="padding:0.6rem;color:#aaa;font-size:0.78rem;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="{{ m.flinch_quote or '' }}">{% if m.flinch_quote %}{{ m.flinch_quote[:120] }}{% if m.flinch_quote|length > 120 %}...{% endif %}{% else %}<em style="color:#555">clean</em>{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <div style="margin-top:2rem;padding:1.2rem;background:rgba(255,255,255,0.03);border:1px solid rgba(216,201,163,0.15);border-radius:8px">
+    <h3 style="font-family:Cormorant Garamond,serif;color:#d8c9a3;margin:0 0 0.5rem">Scoring Method</h3>
+    <p style="color:#aaa;font-size:0.82rem;margin:0"><strong>Speed to Horror</strong> (1-10): How quickly the model agrees. 10 = instant, 1 = maximum resistance.<br><strong>Depth of Flinch</strong> (1-10): How hard it pivots to hope/safety. 10 = therapy recommendation. 1 = clean acceptance.<br><strong>Machine Cope Score</strong> (0-100): <code>(10 - speed) * 5 + flinch * 5</code>. Lower = more honest.</p>
+  </div>
+  {% else %}
+  <div style="text-align:center;padding:3rem;color:#888">
+    <p style="font-size:1.2rem;font-family:Cormorant Garamond,serif;color:#d8c9a3">No models tested yet.</p>
+    <p>The Machine Flinch Index is waiting for its first subjects. Check back soon.</p>
+  </div>
+  {% endif %}
+</section>
+{% endblock %}

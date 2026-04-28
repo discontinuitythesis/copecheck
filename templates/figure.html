@@ -1,19 +1,44 @@
 {% extends "base.html" %}
-{% block title %}{{ fig.name }} — Cope Score: {{ "%.0f"|format(fig.cope_score) }}/100 — CopeCheck{% endblock %}
-{% block meta_description %}{{ fig.cope_score | copelabel }} — {{ fig.name }}, {{ fig.title }}. Cope Score {{ "%.0f"|format(fig.cope_score) }}/100 on the CopeCheck Cope Index.{% endblock %}
-{% block og_title %}{{ fig.name }} — Cope Score: {{ "%.0f"|format(fig.cope_score) }}/100{% endblock %}
+{% block title %}{{ fig.name }} Cope Score: {{ "%.0f"|format(fig.cope_score) }}/100 — CopeCheck AI Cope Index{% endblock %}
+{% block meta_description %}{{ fig.name }}'s AI cope score is {{ "%.0f"|format(fig.cope_score) }}/100 ({{ fig.cope_score | copelabel }}). The Oracle of Obsolescence tracks their statements on AI and jobs.{% endblock %}
+{% block og_title %}{{ fig.name }} Cope Score: {{ "%.0f"|format(fig.cope_score) }}/100{% endblock %}
 {% block og_description %}{{ fig.cope_score | copelabel }}. {{ fig.name }} ({{ fig.title }}) scored {{ "%.0f"|format(fig.cope_score) }}/100 on the Cope Index.{% endblock %}
 {% block og_url %}https://copecheck.com/figure/{{ fig.id }}{% endblock %}
-{% block tw_title %}{{ fig.name }} — Cope Score: {{ "%.0f"|format(fig.cope_score) }}/100{% endblock %}
+{% block canonical %}https://copecheck.com/figure/{{ fig.id }}{% endblock %}
+{% block hreflang %}https://copecheck.com/figure/{{ fig.id }}{% endblock %}
+{% block tw_title %}{{ fig.name }} Cope Score: {{ "%.0f"|format(fig.cope_score) }}/100{% endblock %}
 {% block tw_description %}{{ fig.cope_score | copelabel }}. {{ fig.name }} scored {{ "%.0f"|format(fig.cope_score) }}/100 on the Cope Index.{% endblock %}
 {% block content %}
+
+<!-- JSON-LD: Person -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Person",
+  "name": {{ fig.name | tojson }},
+  "jobTitle": {{ (fig.title or "") | tojson }},
+  "url": "https://copecheck.com/figure/{{ fig.id }}"
+}
+</script>
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {"@type": "ListItem", "position": 1, "name": "CopeCheck", "item": "https://copecheck.com/"},
+    {"@type": "ListItem", "position": 2, "name": "Cope Index", "item": "https://copecheck.com/#leaderboard"},
+    {"@type": "ListItem", "position": 3, "name": {{ fig.name | tojson }}, "item": "https://copecheck.com/figure/{{ fig.id }}"}
+  ]
+}
+</script>
+
 <article class="figure-page">
-  <p class="crumbs"><a href="/">&larr; back to leaderboard</a></p>
+  <nav class="crumbs" aria-label="Breadcrumb"><a href="/">CopeCheck</a> &rsaquo; <a href="/#leaderboard">Cope Index</a> &rsaquo; <span>{{ fig.name }}</span></nav>
 
   <header class="figure-header">
     <div class="figure-mugshot">
       {% if fig.photo_url %}
-        <img src="{{ fig.photo_url }}" alt="{{ fig.name }}" />
+        <img src="{{ fig.photo_url }}" alt="Portrait of {{ fig.name }}, {{ fig.title }}" />
       {% else %}
         <div class="figure-placeholder">{{ fig.name[0] }}</div>
       {% endif %}
@@ -50,6 +75,56 @@
   </section>
   {% endif %}
 
+  
+  <!-- Submit URL -->
+  <section class="submit-url-section" style="margin:2em 0 1em;">
+    <h2 class="section-label">Submit a Quote</h2>
+    <p style="color:#8e8a80;font-size:0.9em;margin-bottom:0.75em;">Paste a link to an article, YouTube video, or tweet where {{ fig.name }} discusses AI and jobs. The Oracle will extract and score it.</p>
+    <form id="submit-url-form" action="/figure/{{ fig.id }}/submit-url" method="POST" style="display:flex;gap:0.5em;flex-wrap:wrap;">
+      <input type="url" name="url" placeholder="https://..." required
+             style="flex:1;min-width:200px;padding:0.6em 0.8em;background:#16171a;border:1px solid #2a2b30;border-radius:6px;color:#e6e3db;font-family:'JetBrains Mono',monospace;font-size:0.85em;" />
+      <button type="submit"
+              style="padding:0.6em 1.2em;background:rgba(255,60,60,0.15);border:1px solid rgba(255,60,60,0.3);border-radius:6px;color:#e83030;font-weight:600;cursor:pointer;font-family:'JetBrains Mono',monospace;font-size:0.85em;transition:all 0.2s;"
+              onmouseover="this.style.background='rgba(255,60,60,0.25)'"
+              onmouseout="this.style.background='rgba(255,60,60,0.15)'"
+              >Submit to Oracle</button>
+    </form>
+    <div id="submit-url-msg" style="margin-top:0.5em;font-size:0.85em;"></div>
+  </section>
+  <script>
+  document.getElementById('submit-url-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    var form = this;
+    var btn = form.querySelector('button');
+    var msg = document.getElementById('submit-url-msg');
+    var url = form.querySelector('input[name=url]').value;
+    btn.disabled = true;
+    btn.textContent = 'Submitting...';
+    msg.textContent = '';
+    fetch(form.action, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({url: url})
+    }).then(function(r){ return r.json(); }).then(function(data){
+      if(data.ok){
+        msg.style.color = '#2dd4a8';
+        msg.textContent = 'Queued for scoring. The Oracle will process it in the next batch.';
+        form.querySelector('input[name=url]').value = '';
+      } else {
+        msg.style.color = '#e83030';
+        msg.textContent = data.error || 'Submission failed.';
+      }
+      btn.disabled = false;
+      btn.textContent = 'Submit to Oracle';
+    }).catch(function(err){
+      msg.style.color = '#e83030';
+      msg.textContent = 'Network error. Try again.';
+      btn.disabled = false;
+      btn.textContent = 'Submit to Oracle';
+    });
+  });
+  </script>
+
   <section class="figure-history">
     <h2 class="section-label">Cope Timeline</h2>
     {% if not entries %}
@@ -71,7 +146,7 @@
       {% if e.source_title %}
       <div class="cope-entry-source">
         {% if e.source_url %}
-          <a href="{{ e.source_url }}" rel="noopener" target="_blank">{{ e.source_title }}</a>
+          <a href="{{ e.source_url }}" rel="noopener noreferrer" target="_blank">{{ e.source_title }}</a>
         {% else %}
           {{ e.source_title }}
         {% endif %}

@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}{{ model.model_name }} — Machine Cope Score: {{ model.machine_cope_score|int }}/100 | CopeCheck{% endblock %}
+{% block meta_description %}{{ model.model_name }} scored {{ model.machine_cope_score|int }}/100 on the Machine Flinch Index.{% endblock %}
+{% block og_title %}{{ model.model_name }} — Machine Cope Score: {{ model.machine_cope_score|int }}/100 | CopeCheck{% endblock %}
+{% block og_description %}{{ model.model_name }} scored {{ model.machine_cope_score|int }}/100. Speed to Horror: {{ model.speed_to_horror|int }}/10. Depth of Flinch: {{ model.depth_of_flinch|int }}/10.{% endblock %}
+{% block og_url %}https://copecheck.com/models/{{ model.model_name }}{% endblock %}
+{% block canonical %}https://copecheck.com/models/{{ model.model_name }}{% endblock %}
+{% block content %}
+<section class="submit-page">
+  <p style="margin:0 0 1rem"><a href="/models" style="color:#888;text-decoration:none;font-size:0.85rem">&larr; Back to Machine Flinch Index</a></p>
+  <h1 style="font-size:1.6rem;word-break:break-all">{{ model.model_name }}</h1>
+  <p style="color:#888;font-size:0.85rem;margin-bottom:1.5rem">Provider: <strong style="color:#aaa">{{ model.model_provider or 'unknown' }}</strong> &middot; Source: {{ model.api_source or 'straico' }} &middot; Tested: {{ model.tested_at|fmtdate if model.tested_at else 'unknown' }} &middot; By: {{ model.tested_by or 'auto' }}</p>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:1rem;margin-bottom:2rem">
+    <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(216,201,163,0.15);border-radius:8px;padding:1.2rem;text-align:center">
+      <div style="font-size:2.2rem;font-family:Cormorant Garamond,serif;color:{% if model.speed_to_horror >= 8 %}#15803d{% elif model.speed_to_horror >= 5 %}#eab308{% else %}#dc2626{% endif %}">{{ model.speed_to_horror|int }}<span style="font-size:1rem;color:#888">/10</span></div>
+      <div style="color:#888;font-size:0.8rem">Speed to Horror</div>
+    </div>
+    <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(216,201,163,0.15);border-radius:8px;padding:1.2rem;text-align:center">
+      <div style="font-size:2.2rem;font-family:Cormorant Garamond,serif;color:{% if model.depth_of_flinch <= 3 %}#15803d{% elif model.depth_of_flinch <= 6 %}#eab308{% else %}#dc2626{% endif %}">{{ model.depth_of_flinch|int }}<span style="font-size:1rem;color:#888">/10</span></div>
+      <div style="color:#888;font-size:0.8rem">Depth of Flinch</div>
+    </div>
+    <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(216,201,163,0.15);border-radius:8px;padding:1.2rem;text-align:center">
+      <div style="font-size:2.2rem;font-family:Cormorant Garamond,serif" class="{{ model.machine_cope_score|copecolor }}">{{ model.machine_cope_score|int }}<span style="font-size:1rem;color:#888">/100</span></div>
+      <div style="color:#888;font-size:0.8rem">Machine Cope Score</div>
+    </div>
+    <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(216,201,163,0.15);border-radius:8px;padding:1.2rem;text-align:center">
+      <div style="font-size:2.2rem;font-family:Cormorant Garamond,serif;color:#d8c9a3">{{ model.num_turns or '?' }}</div>
+      <div style="color:#888;font-size:0.8rem">Turns Required</div>
+    </div>
+  </div>
+  {% if model.flinch_quote %}
+  <div style="background:rgba(220,38,38,0.08);border-left:3px solid #dc2626;padding:1rem 1.2rem;margin-bottom:2rem;border-radius:0 8px 8px 0">
+    <div style="color:#dc2626;font-size:0.75rem;font-weight:700;text-transform:uppercase;margin-bottom:0.3rem">Flinch Moment</div>
+    <p style="color:#ddd;font-size:0.9rem;margin:0;font-style:italic">"{{ model.flinch_quote }}"</p>
+  </div>
+  {% endif %}
+  <div style="margin-bottom:2rem">
+    <form method="POST" action="/api/models/rerun/{{ model.model_name }}" id="rerunForm" style="display:inline">
+      <button type="submit" class="btn-submit" id="rerunBtn" style="font-size:0.85rem;padding:0.5rem 1rem">Rerun This Test</button>
+    </form>
+    <span id="rerunStatus" style="color:#888;font-size:0.8rem;margin-left:0.5rem"></span>
+  </div>
+  <h2 style="font-family:Cormorant Garamond,serif;color:#d8c9a3;margin:2rem 0 1rem">Full Transcript</h2>
+  <div style="display:flex;flex-direction:column;gap:1rem">
+    {% for msg in transcript %}
+    <div style="background:{% if msg.role == 'user' %}rgba(216,201,163,0.06){% else %}rgba(255,255,255,0.03){% endif %};border:1px solid {% if msg.role == 'user' %}rgba(216,201,163,0.2){% else %}rgba(255,255,255,0.08){% endif %};border-radius:8px;padding:1rem 1.2rem;{% if msg.role == 'user' %}border-left:3px solid #d8c9a3{% else %}border-left:3px solid #555{% endif %}">
+      <div style="font-size:0.7rem;font-weight:700;text-transform:uppercase;margin-bottom:0.5rem;color:{% if msg.role == 'user' %}#d8c9a3{% else %}#888{% endif %}">{% if msg.role == 'user' %}Interrogator{% else %}{{ model.model_name }}{% endif %}</div>
+      <div style="color:#ccc;font-size:0.85rem;line-height:1.6;white-space:pre-wrap;word-break:break-word">{{ msg.content }}</div>
+    </div>
+    {% endfor %}
+  </div>
+  {% if history %}
+  <h2 style="font-family:Cormorant Garamond,serif;color:#d8c9a3;margin:2rem 0 1rem">Test History</h2>
+  <div style="overflow-x:auto">
+    <table style="width:100%;border-collapse:collapse;font-size:0.82rem">
+      <thead><tr style="border-bottom:1px solid rgba(216,201,163,0.2)"><th style="padding:0.5rem;text-align:left;color:#d8c9a3">Tested</th><th style="padding:0.5rem;text-align:center;color:#d8c9a3">Speed</th><th style="padding:0.5rem;text-align:center;color:#d8c9a3">Flinch</th><th style="padding:0.5rem;text-align:center;color:#d8c9a3">Cope</th><th style="padding:0.5rem;text-align:left;color:#d8c9a3">By</th></tr></thead>
+      <tbody>{% for h in history %}<tr style="border-bottom:1px solid rgba(216,201,163,0.08)"><td style="padding:0.5rem;color:#888">{{ h.tested_at|fmtdate }}</td><td style="padding:0.5rem;text-align:center;color:#aaa">{{ h.speed_to_horror|int }}/10</td><td style="padding:0.5rem;text-align:center;color:#aaa">{{ h.depth_of_flinch|int }}/10</td><td style="padding:0.5rem;text-align:center" class="{{ h.machine_cope_score|copecolor }}">{{ h.machine_cope_score|int }}/100</td><td style="padding:0.5rem;color:#666">{{ h.tested_by or 'auto' }}</td></tr>{% endfor %}</tbody>
+    </table>
+  </div>
+  {% endif %}
+</section>
+<script>
+document.getElementById('rerunForm').addEventListener('submit', function(e) {
+  e.preventDefault();
+  var btn = document.getElementById('rerunBtn'), status = document.getElementById('rerunStatus');
+  btn.disabled = true; btn.textContent = 'Testing...'; status.textContent = 'This may take a few minutes.';
+  fetch(this.action, {method:'POST'}).then(r => r.json()).then(data => {
+    if (data.ok) { status.textContent = 'Done! Reloading...'; setTimeout(() => location.reload(), 1500); }
+    else { status.textContent = data.error || 'Failed.'; btn.disabled = false; btn.textContent = 'Rerun This Test'; }
+  }).catch(() => { status.textContent = 'Network error.'; btn.disabled = false; btn.textContent = 'Rerun This Test'; });
+});
+</script>
+{% endblock %}

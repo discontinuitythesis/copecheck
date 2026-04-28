@@ -137,6 +137,46 @@ def ingest_feeds() -> int:
     return inserted
 
 
+def ingest_gnews() -> int:
+    """Pull articles from GNews API and queue for analysis."""
+    if not sources.GNEWS_API_KEY:
+        log.info("GNews: no API key, skipping")
+        return 0
+    inserted = 0
+    for query in sources.GNEWS_QUERIES:
+        if inserted >= MAX_NEW_PER_RUN:
+            break
+        log.info("gnews scan: %s", query)
+        articles = sources.gnews_search(query, max_results=10)
+        for a in articles:
+            if inserted >= MAX_NEW_PER_RUN:
+                break
+            url = a["url"]
+            title = a["title"]
+            if not url or not title:
+                continue
+            if db.exists(url):
+                continue
+
+            # GNews content is often truncated; fetch full article
+            body = a["body"] or ""
+            if len(body) < MIN_BODY_CHARS:
+                body = fetch_article(url)
+            if len(body) < MIN_BODY_CHARS:
+                if len(a["snippet"]) > MIN_BODY_CHARS:
+                    body = a["snippet"]
+                else:
+                    continue
+
+            slug = db.insert_pending(url, title, a["source"] or "GNews", a["published"], a["snippet"], body)
+            if slug:
+                inserted += 1
+                log.info("queued [GNews/%s] %s", a["source"], title[:90])
+        time.sleep(1)  # rate limit courtesy
+    log.info("gnews ingestion: %d new pending", inserted)
+    return inserted
+
+
 def analyse_pending() -> int:
     pending = db.pending_for_analysis(limit=MAX_ANALYSE_PER_RUN)
     if not pending:
@@ -166,59 +206,95 @@ def analyse_pending() -> int:
 
 
 def _crosslink_figures(article_row, oracle_result):
+    """Cross-link articles to figures. Only attributes if full name is found."""
+    import re as _re
     figures = _load_figures()
     if not figures:
         return
-    text = (article_row.get("body") or article_row.get("snippet") or "").lower()
-    title = (article_row.get("title") or "").lower()
+    text = (article_row.get("body") or article_row.get("snippet") or "")
+    title = (article_row.get("title") or "")
+    combined = (title + " " + text).lower()
 
     for fig in figures:
-        name_parts = fig["name"].lower().split()
-        last_name = name_parts[-1] if name_parts else ""
-        if last_name in text or last_name in title or fig["name"].lower() in text:
-            quote_context = _extract_figure_context(
-                article_row.get("body") or article_row.get("snippet") or "",
-                fig["name"]
-            )
-            if quote_context and len(quote_context) > 50:
-                try:
-                    log.info("cope cross-link: %s in article %s",
-                             fig["name"], article_row["slug"][:40])
-                    cope_result = oracle.score_cope(
-                        fig["name"], fig.get("title", ""),
-                        quote_context,
-                        source_context=f"From article: {article_row['title']}"
-                    )
-                    db.add_cope_entry(
-                        figure_id=fig["id"],
-                        article_slug=article_row["slug"],
-                        quote=cope_result.get("cope_quote") or quote_context[:300],
-                        source_url=article_row["url"],
-                        source_title=article_row["title"],
-                        cope_score=cope_result["cope_score"],
-                        cope_type=cope_result.get("cope_type", "unknown"),
-                        analysis_md=cope_result.get("analysis", ""),
-                        model=cope_result.get("model", ""),
-                    )
-                    time.sleep(1)
-                except Exception as e:
-                    log.warning("cope cross-link failed for %s: %s", fig["name"], e)
+        name_lower = fig["name"].lower()
+        last_name = fig["name"].split()[-1].lower()
+
+        # Check for full name with word boundaries
+        full_pattern = _re.compile(r'\b' + _re.escape(name_lower) + r'\b')
+        full_matches = full_pattern.findall(combined)
+
+        # Check last name only if 5+ chars
+        last_matches = []
+        if len(last_name) >= 5:
+            last_pattern = _re.compile(r'\b' + _re.escape(last_name) + r'\b')
+            last_matches = last_pattern.findall(combined)
+
+        # Attribution rules:
+        # - Full name found anywhere -> attribute
+        # - Last name (5+ chars) found 2+ times -> attribute
+        # - Otherwise -> skip
+        if not full_matches and len(last_matches) < 2:
+            continue
+
+        quote_context = _extract_figure_context(text, fig["name"])
+        if quote_context and len(quote_context) > 50:
+            try:
+                log.info("cope cross-link: %s in article %s",
+                         fig["name"], article_row["slug"][:40])
+                cope_result = oracle.score_cope(
+                    fig["name"], fig.get("title", ""),
+                    quote_context,
+                    source_context="From article: " + article_row["title"],
+                )
+                db.add_cope_entry(
+                    figure_id=fig["id"],
+                    article_slug=article_row["slug"],
+                    quote=cope_result.get("cope_quote") or quote_context[:300],
+                    source_url=article_row["url"],
+                    source_title=article_row["title"],
+                    cope_score=cope_result["cope_score"],
+                    cope_type=cope_result.get("cope_type", "unknown"),
+                    analysis_md=cope_result.get("analysis", ""),
+                    model=cope_result.get("model", ""),
+                )
+                time.sleep(1)
+            except Exception as e:
+                log.warning("cope cross-link failed for %s: %s", fig["name"], e)
 
 
 def _extract_figure_context(text: str, name: str, window=800) -> str:
+    """Extract text around mentions of a figure. Requires strong name match."""
+    import re as _re
     lower = text.lower()
     name_lower = name.lower()
     last_name = name.split()[-1].lower()
 
-    positions = []
-    for search_term in [name_lower, last_name]:
-        start = 0
-        while True:
-            idx = lower.find(search_term, start)
-            if idx == -1:
-                break
-            positions.append(idx)
-            start = idx + len(search_term)
+    def _word_boundary_find(haystack, needle):
+        """Find all positions of needle with word boundaries."""
+        positions = []
+        pattern = _re.compile(r'\b' + _re.escape(needle) + r'\b')
+        for m in pattern.finditer(haystack):
+            positions.append(m.start())
+        return positions
+
+    # Find full name matches (high confidence)
+    full_positions = _word_boundary_find(lower, name_lower)
+
+    # Find last name matches only if last name is 4+ chars (skip "Ng", "Li", etc.)
+    last_positions = []
+    if len(last_name) >= 4:
+        last_positions = _word_boundary_find(lower, last_name)
+
+    # Decide which positions to use
+    if full_positions:
+        # Full name found - use all positions (full + last)
+        positions = sorted(set(full_positions + last_positions))
+    elif len(last_positions) >= 2:
+        # No full name but last name appears 2+ times with word boundaries
+        positions = last_positions
+    else:
+        # Not enough evidence this article is about this figure
+        return ""
 
     if not positions:
         return ""
@@ -344,8 +420,9 @@ def main():
 
     if mode in ("all", "news"):
         n_new = ingest_feeds()
+        n_gnews = ingest_gnews()
         n_done = analyse_pending()
-        log.info("news pipeline: ingested=%d analysed=%d", n_new, n_done)
+        log.info("news pipeline: rss=%d gnews=%d analysed=%d", n_new, n_gnews, n_done)
 
     if mode in ("all", "cope"):
         n_cope = scan_figure_news()

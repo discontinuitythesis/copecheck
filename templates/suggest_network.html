@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Suggest a Network — CopeCheck{% endblock %}
+{% block og_title %}Suggest a CopeCheck Network{% endblock %}
+{% block og_description %}Think an industry is coping hard enough to deserve its own subdomain? Tell us.{% endblock %}
+{% block og_url %}https://copecheck.com/suggest-network{% endblock %}
+{% block canonical %}https://copecheck.com/suggest-network{% endblock %}
+{% block hreflang %}https://copecheck.com/suggest-network{% endblock %}
+{% block content %}
+<section class="submit-page">
+  <h1>Suggest a Network</h1>
+  <p class="tagline">The CopeCheck Network tracks cope across industries. Think a sector is in enough denial to deserve its own subdomain? Make the case.</p>
+
+  <div style="margin:1.5rem 0;padding:1.2rem;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:8px;">
+    <p style="margin:0 0 0.8rem;font-size:0.95rem;opacity:0.8;">Current network:</p>
+    <p style="margin:0 0 0.4rem;"><strong><a href="https://copecheck.com" style="color:var(--accent,#e2c97e);">copecheck.com</a></strong> &mdash; The main Cope Index. Public figures scored on AI denial.</p>
+    <p style="margin:0 0 0.4rem;"><strong><a href="https://uk.copecheck.com" style="color:var(--accent,#e2c97e);">uk.copecheck.com</a></strong> &mdash; UK economic data vs political narrative. ONS stats meet cope analysis.</p>
+    <p style="margin:0;"><strong><a href="https://countries.copecheck.com" style="color:var(--accent,#e2c97e);">countries.copecheck.com</a></strong> &mdash; 20 nations ranked by AI readiness. Who&rsquo;s prepared, who&rsquo;s coping.</p>
+  </div>
+
+  {% if success %}
+  <div class="submit-success">{{ success }}</div>
+  {% endif %}
+
+  {% if error %}
+  <div class="submit-error">{{ error }}</div>
+  {% endif %}
+
+  {% if not success %}
+  <form class="submit-form active" method="POST" action="/suggest-network">
+    <div style="display:none"><input type="text" name="website" tabindex="-1" autocomplete="off" /></div>
+    <div class="form-row">
+      <label class="form-label">Industry / Sector</label>
+      <input type="text" name="industry" placeholder="e.g. Legal, Finance, Healthcare, Creative..." class="input-field" maxlength="100" required />
+    </div>
+    <div class="form-row">
+      <label class="form-label">Suggested subdomain</label>
+      <input type="text" name="subdomain" placeholder="e.g. lawyers.copecheck.com" class="input-field" maxlength="100" />
+    </div>
+    <div class="form-row">
+      <label class="form-label">Why is this industry coping?</label>
+      <textarea name="rationale" placeholder="What makes the cope in this sector thick enough to track? Who are the key copers? What are they saying?" rows="5" maxlength="5000" class="input-field" required></textarea>
+    </div>
+    <div class="form-row">
+      <label class="form-label">Name any specific figures worth tracking</label>
+      <textarea name="figures" placeholder="Optional — name people, orgs, or publications producing industrial-grade cope in this sector." rows="3" maxlength="2000" class="input-field"></textarea>
+    </div>
+    <div class="form-row">
+      <label class="form-label">Your email <span style="color:#666;font-weight:normal">(optional, if you want updates)</span></label>
+      <input type="email" name="email" placeholder="you@example.com" class="input-field" maxlength="200" />
+    </div>
+    <button type="submit" class="btn-submit">Submit Suggestion</button>
+  </form>
+  {% endif %}
+</section>
+{% endblock %}

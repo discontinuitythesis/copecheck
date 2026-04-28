@@ -69,6 +69,21 @@ CREATE TABLE IF NOT EXISTS cope_entries (
 );
 CREATE INDEX IF NOT EXISTS idx_cope_figure ON cope_entries(figure_id, created_at DESC);
 
+
+CREATE TABLE IF NOT EXISTS url_submissions (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    figure_id   TEXT NOT NULL REFERENCES figures(id),
+    url         TEXT NOT NULL,
+    url_type    TEXT DEFAULT 'unknown',
+    extracted_text TEXT,
+    status      TEXT DEFAULT 'pending',
+    error_msg   TEXT,
+    submitted_by TEXT DEFAULT 'anonymous',
+    ip_hash     TEXT,
+    created_at  TEXT DEFAULT CURRENT_TIMESTAMP,
+    processed_at TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_urlsub_status ON url_submissions(status, created_at);
 CREATE TABLE IF NOT EXISTS comments (
     id          INTEGER PRIMARY KEY AUTOINCREMENT,
     article_slug TEXT NOT NULL,
@@ -159,7 +174,7 @@ def insert_pending(url, title, source, published, snippet, body):
     slug = make_slug(title, url)
     with conn() as c:
         try:
-            c.execute(
+            cur = c.execute(
                 """INSERT INTO articles
                 (slug, url, url_hash, title, source, published, snippet, body, status)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending')""",
@@ -172,7 +187,7 @@ def insert_pending(url, title, source, published, snippet, body):
 
 def set_verdict(slug, verdict_md, one_liner, model, price):
     with conn() as c:
-        c.execute(
+        cur = c.execute(
             """UPDATE articles
                SET verdict_md = ?, one_liner = ?, model = ?, price = ?,
                    status = 'analysed', analysed_at = CURRENT_TIMESTAMP,
@@ -184,7 +199,7 @@ def set_verdict(slug, verdict_md, one_liner, model, price):
 
 def set_failed(slug, error):
     with conn() as c:
-        c.execute(
+        cur = c.execute(
             "UPDATE articles SET status = 'failed', error = ? WHERE slug = ?",
             (error[:1000], slug),
         )
@@ -225,7 +240,7 @@ def counts():
 
 def upsert_figure(fig_id, name, title, category, photo_url, cope_bias):
     with conn() as c:
-        c.execute(
+        cur = c.execute(
             """INSERT INTO figures (id, name, title, category, photo_url, cope_bias)
                VALUES (?, ?, ?, ?, ?, ?)
                ON CONFLICT(id) DO UPDATE SET
@@ -254,7 +269,7 @@ def get_leaderboard():
 def add_cope_entry(figure_id, article_slug, quote, source_url, source_title,
                    cope_score, cope_type, analysis_md, model):
     with conn() as c:
-        c.execute(
+        cur = c.execute(
             """INSERT INTO cope_entries
                (figure_id, article_slug, quote, source_url, source_title,
                 cope_score, cope_type, analysis_md, model)
@@ -264,23 +279,45 @@ def add_cope_entry(figure_id, article_slug, quote, source_url, source_title,
         )
         cur = c.execute(
             """SELECT cope_score, created_at FROM cope_entries
-               WHERE figure_id = ? ORDER BY created_at DESC LIMIT 20""",
+               WHERE figure_id = ? ORDER BY created_at DESC""",
             (figure_id,),
         )
         entries = cur.fetchall()
         if entries:
+            # Recency-weighted scoring with noise filter
+            # - Drop entries scoring < 15 (noise / irrelevant mentions)
+            # - 14-day half-life: entries lose half their weight every 2 weeks
+            import math
+            from datetime import datetime, timezone
+            now = datetime.now(timezone.utc)
+            HALF_LIFE_DAYS = 14.0
+            DECAY = math.log(2) / HALF_LIFE_DAYS
+            MIN_SCORE = 15  # noise threshold
             total_w = 0.0
             total_s = 0.0
-            for i, e in enumerate(entries):
-                w = 0.85 ** i
+            for e in entries:
+                if e["cope_score"] < MIN_SCORE:
+                    continue  # skip noise
+                try:
+                    ts = datetime.fromisoformat(e["created_at"].replace("Z", "+00:00"))
+                    if ts.tzinfo is None:
+                        ts = ts.replace(tzinfo=timezone.utc)
+                    age_days = (now - ts).total_seconds() / 86400.0
+                except Exception:
+                    age_days = 30.0
+                w = math.exp(-DECAY * age_days)
                 total_w += w
                 total_s += e["cope_score"] * w
-            new_avg = round(total_s / total_w, 1) if total_w > 0 else cope_score
+            if total_w > 0:
+                new_avg = round(total_s / total_w, 1)
+            else:
+                all_scores = [e["cope_score"] for e in entries]
+                new_avg = round(sum(all_scores) / len(all_scores), 1) if all_scores else cope_score
             cur2 = c.execute("SELECT cope_score FROM figures WHERE id = ?", (figure_id,))
             old = cur2.fetchone()
             prev = old["cope_score"] if old else 50.0
 
-            c.execute(
+            cur = c.execute(
                 """UPDATE figures SET
                        cope_score = ?, prev_score = ?,
                        total_quotes = (SELECT COUNT(*) FROM cope_entries WHERE figure_id = ?),
@@ -289,6 +326,77 @@ def add_cope_entry(figure_id, article_slug, quote, source_url, source_title,
                    WHERE id = ?""",
                 (new_avg, prev, figure_id, quote[:500], cope_type, figure_id),
             )
+
+
+
+
+def add_url_submission(figure_id, url, ip_hash="", submitted_by="anonymous"):
+    """Queue a URL for extraction and scoring."""
+    with conn() as c:
+        # Dedupe: don't resubmit same URL for same figure within 7 days
+        cur = c.execute(
+            """SELECT 1 FROM url_submissions
+               WHERE figure_id = ? AND url = ?
+               AND created_at > datetime('now', '-7 days')""",
+            (figure_id, url),
+        )
+        if cur.fetchone():
+            return None  # already submitted recently
+        # Also check if this URL is already in cope_entries
+        cur = c.execute(
+            """SELECT 1 FROM cope_entries
+               WHERE figure_id = ? AND source_url = ?""",
+            (figure_id, url),
+        )
+        if cur.fetchone():
+            return None  # already scored
+        cur = c.execute(
+            """INSERT INTO url_submissions (figure_id, url, ip_hash, submitted_by)
+               VALUES (?, ?, ?, ?)""",
+            (figure_id, url, ip_hash, submitted_by),
+        )
+        return cur.lastrowid
+
+
+def get_pending_submissions(limit=20):
+    """Get pending URL submissions for processing."""
+    with conn() as c:
+        cur = c.execute(
+            """SELECT us.*, f.name as figure_name, f.title as figure_title
+               FROM url_submissions us
+               JOIN figures f ON us.figure_id = f.id
+               WHERE us.status = 'pending'
+               ORDER BY us.created_at ASC LIMIT ?""",
+            (limit,),
+        )
+        return [dict(r) for r in cur.fetchall()]
+
+
+def update_submission(sub_id, status, extracted_text=None, url_type=None, error_msg=None):
+    """Update a URL submission after processing."""
+    with conn() as c:
+        cur = c.execute(
+            """UPDATE url_submissions SET
+                   status = ?,
+                   extracted_text = COALESCE(?, extracted_text),
+                   url_type = COALESCE(?, url_type),
+                   error_msg = ?,
+                   processed_at = CURRENT_TIMESTAMP
+               WHERE id = ?""",
+            (status, extracted_text, url_type, error_msg, sub_id),
+        )
+
+
+def get_submissions_for_figure(figure_id, limit=10):
+    """Get recent submissions for a figure."""
+    with conn() as c:
+        cur = c.execute(
+            """SELECT * FROM url_submissions
+               WHERE figure_id = ?
+               ORDER BY created_at DESC LIMIT ?""",
+            (figure_id, limit),
+        )
+        return [dict(r) for r in cur.fetchall()]
 
 
 def figure_entries(figure_id, limit=50):
@@ -324,7 +432,7 @@ def cope_entry_exists(figure_id, quote_hash):
 
 def add_comment(article_slug, author_name, body, ip_hash=None):
     with conn() as c:
-        c.execute(
+        cur = c.execute(
             """INSERT INTO comments (article_slug, author_name, body, ip_hash)
                VALUES (?, ?, ?, ?)""",
             (article_slug, (author_name or "Anonymous").strip()[:50],
@@ -365,7 +473,7 @@ def recent_comments_by_ip(ip_hash, minutes=5):
 
 def create_submission(title, source, url, text_preview, body, ip_hash):
     with conn() as c:
-        c.execute(
+        cur = c.execute(
             """INSERT INTO submissions (title, source, url, text_preview, body, ip_hash)
                VALUES (?, ?, ?, ?, ?, ?)""",
             (title, source, url or "", text_preview, body, ip_hash),
@@ -375,7 +483,7 @@ def create_submission(title, source, url, text_preview, body, ip_hash):
 
 def set_submission_verdict(sub_id, verdict_md, one_liner, model, price):
     with conn() as c:
-        c.execute(
+        cur = c.execute(
             """UPDATE submissions
                SET verdict_md = ?, one_liner = ?, model = ?, price = ?,
                    status = 'analysed'
@@ -386,7 +494,7 @@ def set_submission_verdict(sub_id, verdict_md, one_liner, model, price):
 
 def set_submission_failed(sub_id, error):
     with conn() as c:
-        c.execute(
+        cur = c.execute(
             "UPDATE submissions SET status = 'failed', error = ? WHERE id = ?",
             (error[:1000], sub_id),
         )
@@ -406,7 +514,7 @@ def get_submission(sub_id):
 
 def add_suggestion(name, reason, example, ip_hash):
     with conn() as c:
-        c.execute(
+        cur = c.execute(
             """INSERT INTO suggestions (name, reason, example, ip_hash)
                VALUES (?, ?, ?, ?)""",
             (name[:100], (reason or "")[:1000], (example or "")[:1000], ip_hash),
@@ -427,43 +535,86 @@ def recent_suggestions_by_ip(ip_hash, minutes=60):
 # ─── COPE OF THE WEEK ────────────────────────────────────
 
 def cope_of_the_week():
-    """Find the article from the past 7 days with highest cope density."""
-    cope_words = ['copium', 'lullaby', 'ideological anesthetic', 'false reassurance',
-                  'denial', 'deflection', 'elite self-exoneration', 'techno-optimism',
-                  'augmentation fantasy', 'regulatory hopium', 'timeline minimisation',
-                  'jobs will be created', 'human creativity cope']
+    """Return the top cope entry from the past week, cached in cotw_archive."""
+    from datetime import datetime, timedelta
+    import re as _re
+    today = datetime.utcnow().date()
+    monday = today - timedelta(days=today.weekday())
+    week_key = monday.strftime("%Y-%m-%d")
+
     with conn() as c:
+        row = c.execute(
+            "SELECT * FROM cotw_archive WHERE week_start = ?", (week_key,)
+        ).fetchone()
+        if row:
+            d = dict(row)
+            if not d.get('figure_name'):
+                t = d.get('title', '')
+                if ' \u2014 ' in t:
+                    d['figure_name'] = t.split(' \u2014 ')[0]
+            if not d.get('cope_score'):
+                t = d.get('title', '')
+                m = _re.search(r'(\d+)/100', t)
+                if m:
+                    d['cope_score'] = float(m.group(1))
+            if not d.get('cope_type'):
+                d['cope_type'] = d.get('source', 'Maximum Cope')
+            return d
+
+        week_ago = (today - timedelta(days=7)).strftime("%Y-%m-%d")
+        entry = c.execute(
+            "SELECT ce.*, f.name as figure_name "
+            "FROM cope_entries ce "
+            "JOIN figures f ON ce.figure_id = f.id "
+            "WHERE ce.created_at >= ? AND ce.cope_score >= 15 "
+            "ORDER BY ce.cope_score DESC LIMIT 1",
+            (week_ago,)
+        ).fetchone()
+
+        if not entry:
+            return None
+
+        entry = dict(entry)
+        slug = "cope-%s-%s" % (entry['figure_id'], week_key)
+        fig = entry['figure_name']
+        score = entry['cope_score']
+        ctype = entry.get('cope_type', '')
+        title = "%s \u2014 %d/100 Cope Score" % (fig, int(score))
+
         cur = c.execute(
-            """SELECT * FROM articles
-               WHERE status = 'analysed' AND verdict_md IS NOT NULL
-                 AND analysed_at > datetime('now', '-7 days')
-               ORDER BY analysed_at DESC LIMIT 50""",
+            "INSERT OR REPLACE INTO cotw_archive "
+            "(week_start, slug, title, source, one_liner, url, published, analysed_at, figure_name, cope_score, cope_type, analysis_md) "
+            "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            (week_key, slug, title, ctype, entry.get('quote', ''),
+             entry.get('source_url', ''), entry.get('created_at', ''),
+             entry.get('created_at', ''), fig, score, ctype, entry.get('analysis_md', ''))
         )
-        candidates = [dict(r) for r in cur.fetchall()]
 
-    if not candidates:
-        # Fallback to all time if no recent articles
-        with conn() as c:
-            cur = c.execute(
-                """SELECT * FROM articles
-                   WHERE status = 'analysed' AND verdict_md IS NOT NULL
-                   ORDER BY analysed_at DESC LIMIT 20""",
-            )
-            candidates = [dict(r) for r in cur.fetchall()]
-
-    if not candidates:
+        cached = c.execute(
+            "SELECT * FROM cotw_archive WHERE week_start = ?", (week_key,)
+        ).fetchone()
+        if cached:
+            d = dict(cached)
+            if not d.get('figure_name'):
+                d['figure_name'] = fig
+            if not d.get('cope_score'):
+                d['cope_score'] = score
+            if not d.get('cope_type'):
+                d['cope_type'] = ctype or 'Maximum Cope'
+            return d
         return None
 
-    best = None
-    best_score = -1
-    for art in candidates:
-        verdict = (art.get("verdict_md") or "").lower()
-        score = sum(verdict.count(w) for w in cope_words)
-        if score > best_score:
-            best_score = score
-            best = art
-
-    return best if best_score > 0 else (candidates[0] if candidates else None)
+def cotw_archive_list(limit=52):
+    """Return past Cope of the Week winners, newest first."""
+    with conn() as c:
+        cur = c.execute(
+            """SELECT ca.*, a.snippet, a.verdict_md
+               FROM cotw_archive ca
+               LEFT JOIN articles a ON a.slug = ca.slug
+               ORDER BY ca.week_start DESC LIMIT ?""",
+            (limit,),
+        )
+        return [dict(r) for r in cur.fetchall()]
 
 
 # ─── SEARCH ───────────────────────────────────────────────
@@ -471,8 +622,8 @@ def cope_of_the_week():
 def rebuild_fts():
     """Rebuild the FTS5 index from articles table."""
     with conn() as c:
-        c.execute("DELETE FROM articles_fts")
-        c.execute("""
+        cur = c.execute("DELETE FROM articles_fts")
+        cur = c.execute("""
             INSERT INTO articles_fts(slug, title, source, snippet, one_liner, verdict_md)
             SELECT slug, title, source, COALESCE(snippet,''), COALESCE(one_liner,''), COALESCE(verdict_md,'')
             FROM articles WHERE status = 'analysed'
@@ -508,3 +659,184 @@ def search_articles(query, limit=30):
                 ORDER BY analysed_at DESC LIMIT ?
             """, (like_q, like_q, like_q, like_q, limit))
             return [dict(r) for r in cur.fetchall()]
+
+
+# ─── INSTANT SCORES ──────────────────────────────────────
+
+INSTANT_SCHEMA = """
+CREATE TABLE IF NOT EXISTS instant_scores (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    name        TEXT NOT NULL,
+    slug        TEXT UNIQUE NOT NULL,
+    research_text TEXT,
+    quotes_json TEXT,
+    cope_score  REAL,
+    cope_types  TEXT,
+    oracle_verdict TEXT,
+    ip_hash     TEXT,
+    perplexity_model TEXT,
+    scoring_model TEXT,
+    total_price REAL DEFAULT 0,
+    created_at  TEXT DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_instant_slug ON instant_scores(slug);
+CREATE INDEX IF NOT EXISTS idx_instant_name ON instant_scores(name COLLATE NOCASE);
+CREATE INDEX IF NOT EXISTS idx_instant_created ON instant_scores(created_at DESC);
+"""
+
+
+def init_instant():
+    with conn() as c:
+        c.executescript(INSTANT_SCHEMA)
+
+
+def get_instant_by_slug(slug):
+    with conn() as c:
+        cur = c.execute("SELECT * FROM instant_scores WHERE slug = ?", (slug,))
+        row = cur.fetchone()
+        return dict(row) if row else None
+
+
+def get_cached_instant(name, max_age_hours=24):
+    """Return cached instant score if fresh enough."""
+    with conn() as c:
+        cur = c.execute(
+            """SELECT * FROM instant_scores
+               WHERE name = ? COLLATE NOCASE
+                 AND created_at > datetime('now', ?)
+               ORDER BY created_at DESC LIMIT 1""",
+            (name.strip(), f"-{max_age_hours} hours"),
+        )
+        row = cur.fetchone()
+        return dict(row) if row else None
+
+
+def save_instant_score(name, slug, research_text, quotes_json, cope_score,
+                       cope_types, oracle_verdict, ip_hash, perplexity_model,
+                       scoring_model, total_price):
+    with conn() as c:
+        try:
+            cur = c.execute(
+                """INSERT INTO instant_scores
+                   (name, slug, research_text, quotes_json, cope_score, cope_types,
+                    oracle_verdict, ip_hash, perplexity_model, scoring_model, total_price)
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                (name, slug, research_text, quotes_json, cope_score, cope_types,
+                 oracle_verdict, ip_hash, perplexity_model, scoring_model, total_price),
+            )
+            return c.execute("SELECT last_insert_rowid()").fetchone()[0]
+        except sqlite3.IntegrityError:
+            return None
+
+
+def recent_instant_by_ip(ip_hash, minutes=60):
+    with conn() as c:
+        cur = c.execute(
+            """SELECT COUNT(*) AS n FROM instant_scores
+               WHERE ip_hash = ? AND created_at > datetime('now', ?)""",
+            (ip_hash, f"-{minutes} minutes"),
+        )
+        return cur.fetchone()["n"]
+
+
+def recent_instant_scores(limit=20):
+    with conn() as c:
+        cur = c.execute(
+            "SELECT * FROM instant_scores ORDER BY created_at DESC LIMIT ?",
+            (limit,),
+        )
+        return [dict(r) for r in cur.fetchall()]
+
+
+# ─── FEEDBACK ─────────────────────────────────────────────
+
+FEEDBACK_SCHEMA = """
+CREATE TABLE IF NOT EXISTS feedback (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    name        TEXT,
+    email       TEXT,
+    message     TEXT NOT NULL,
+    ip_hash     TEXT,
+    created_at  TEXT DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_feedback_created ON feedback(created_at DESC);
+"""
+
+
+def init_feedback():
+    with conn() as c:
+        c.executescript(FEEDBACK_SCHEMA)
+
+
+def add_feedback(name, email, message, ip_hash):
+    with conn() as c:
+        cur = c.execute(
+            """INSERT INTO feedback (name, email, message, ip_hash)
+               VALUES (?, ?, ?, ?)""",
+            ((name or "")[:100], (email or "")[:200], message[:5000], ip_hash),
+        )
+        return True
+
+
+def recent_feedback_by_ip(ip_hash, minutes=60):
+    with conn() as c:
+        cur = c.execute(
+            """SELECT COUNT(*) AS n FROM feedback
+               WHERE ip_hash = ? AND created_at > datetime('now', ?)""",
+            (ip_hash, f"-{minutes} minutes"),
+        )
+        return cur.fetchone()["n"]
+
+
+def get_all_feedback(limit=200):
+    with conn() as c:
+        cur = c.execute(
+            "SELECT * FROM feedback ORDER BY created_at DESC LIMIT ?",
+            (limit,),
+        )
+        return [dict(r) for r in cur.fetchall()]
+
+
+# ─── ADMIN HELPERS ────────────────────────────────────────
+
+def get_all_suggestions(status=None):
+    with conn() as c:
+        if status:
+            cur = c.execute(
+                "SELECT * FROM suggestions WHERE status = ? ORDER BY created_at DESC",
+                (status,),
+            )
+        else:
+            cur = c.execute("SELECT * FROM suggestions ORDER BY created_at DESC")
+        return [dict(r) for r in cur.fetchall()]
+
+
+def get_suggestion(sid):
+    with conn() as c:
+        cur = c.execute("SELECT * FROM suggestions WHERE id = ?", (sid,))
+        row = cur.fetchone()
+        return dict(row) if row else None
+
+
+def update_suggestion_status(sid, status):
+    with conn() as c:
+        cur = c.execute("UPDATE suggestions SET status = ? WHERE id = ?", (status, sid))
+
+
+def get_admin_stats():
+    with conn() as c:
+        stats = {}
+        stats["total_articles"] = c.execute("SELECT COUNT(*) FROM articles").fetchone()[0]
+        stats["total_verdicts"] = c.execute("SELECT COUNT(*) FROM articles WHERE status = 'analysed'").fetchone()[0]
+        stats["total_comments"] = c.execute("SELECT COUNT(*) FROM comments").fetchone()[0]
+        stats["total_submissions"] = c.execute("SELECT COUNT(*) FROM submissions").fetchone()[0]
+        stats["total_figures"] = c.execute("SELECT COUNT(*) FROM figures").fetchone()[0]
+        stats["total_cope_entries"] = c.execute("SELECT COUNT(*) FROM cope_entries").fetchone()[0]
+        stats["suggestions_pending"] = c.execute("SELECT COUNT(*) FROM suggestions WHERE status = 'pending'").fetchone()[0]
+        stats["suggestions_approved"] = c.execute("SELECT COUNT(*) FROM suggestions WHERE status = 'approved'").fetchone()[0]
+        stats["suggestions_dismissed"] = c.execute("SELECT COUNT(*) FROM suggestions WHERE status = 'dismissed'").fetchone()[0]
+        try:
+            stats["total_feedback"] = c.execute("SELECT COUNT(*) FROM feedback").fetchone()[0]
+        except Exception:
+            stats["total_feedback"] = 0
+        return stats

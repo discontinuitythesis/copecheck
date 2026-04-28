@@ -1,5 +1,27 @@
 {% extends "base.html" %}
+{% block canonical %}https://copecheck.com/{% endblock %}
+{% block hreflang %}https://copecheck.com/{% endblock %}
 {% block content %}
+
+<!-- JSON-LD: WebSite -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": "CopeCheck",
+  "alternateName": "AI Cope Index",
+  "url": "https://copecheck.com/",
+  "description": "Live leaderboard scoring tech leaders on how much they're coping about AI replacing jobs.",
+  "potentialAction": {
+    "@type": "SearchAction",
+    "target": {
+      "@type": "EntryPoint",
+      "urlTemplate": "https://copecheck.com/search?q={search_term_string}"
+    },
+    "query-input": "required name=search_term_string"
+  }
+}
+</script>
 <section class="hero">
   <h1>The <em>Cope</em> Index</h1>
   <p class="tagline">Tracking who's coping hardest about the end of work</p>
@@ -17,19 +39,26 @@
   <article class="cotw-card">
     <div class="cotw-badge">COPE OF THE WEEK</div>
     <header class="card-head">
-      <span class="card-source">{{ cope_of_week.source }}</span>
+      <span class="card-source" style="font-weight:700;font-size:1.15em;">{{ cope_of_week.figure_name or cope_of_week.title }}</span>
       <span class="card-dot">&middot;</span>
-      <span class="card-date">{{ cope_of_week.published | fmtdate or cope_of_week.analysed_at | fmtdate }}</span>
+      <span class="card-date">Score: {{ cope_of_week.cope_score | int }}/100</span>
     </header>
-    <h3 class="card-title">
-      <a href="/v/{{ cope_of_week.slug }}">{{ cope_of_week.title }}</a>
-    </h3>
+    <div class="cotw-types" style="display:flex;gap:0.5em;flex-wrap:wrap;margin:0.5em 0;">
+      {% for t in (cope_of_week.cope_type or 'Maximum Cope').split(',') %}
+      <span class="cope-tag" style="background:rgba(255,60,60,0.12);color:#c33;padding:2px 8px;border-radius:12px;font-size:0.82em;font-weight:600;">{{ t.strip().replace('_',' ').title() }}</span>
+      {% endfor %}
+    </div>
     {% if cope_of_week.one_liner %}
-    <p class="card-verdict">{{ cope_of_week.one_liner }}</p>
+    <p class="card-verdict">&ldquo;{{ cope_of_week.one_liner | stripquotes }}&rdquo;</p>
+    {% endif %}
+    {% if cope_of_week.analysis_md %}
+    <p class="cotw-analysis" style="font-size:0.9em;line-height:1.5;color:#bbb;margin:0.75em 0 0.5em;padding:0.75em;background:rgba(255,255,255,0.03);border-left:3px solid rgba(255,60,60,0.3);border-radius:0 6px 6px 0;">{{ cope_of_week.analysis_md }}</p>
     {% endif %}
     <footer class="card-foot">
-      <a class="card-link" href="/v/{{ cope_of_week.slug }}">Read the autopsy &rarr;</a>
-      <a class="card-link faded" href="{{ cope_of_week.url }}" rel="noopener" target="_blank">Original</a>
+      {% if cope_of_week.url %}
+      <a class="card-link" href="{{ cope_of_week.url }}" rel="noopener noreferrer" target="_blank">Read the source &rarr;</a>
+      {% endif %}
+      <a class="card-link faded" href="/cope-of-the-week">COTW Archive</a>
     </footer>
   </article>
 </section>
@@ -47,7 +76,7 @@
       <div class="lb-rank">#{{ loop.index }}</div>
       <div class="lb-avatar">
         {% if fig.photo_url %}
-          <img src="{{ fig.photo_url }}" alt="{{ fig.name }}" loading="lazy" />
+          <img src="{{ fig.photo_url }}" alt="Portrait of {{ fig.name }}, {{ fig.title or fig.category }}" loading="lazy" />
         {% else %}
           <div class="lb-avatar-placeholder">{{ fig.name[0] }}</div>
         {% endif %}
@@ -55,6 +84,9 @@
       <div class="lb-info">
         <div class="lb-name">{{ fig.name }}</div>
         <div class="lb-title">{{ fig.title or fig.category }}</div>
+        {% if fig.description %}
+        <div class="lb-description">{{ fig.description }}</div>
+        {% endif %}
         {% if fig.last_cope_type %}
           <div class="lb-cope-type">{{ fig.last_cope_type }}</div>
         {% endif %}
@@ -74,6 +106,7 @@
     {% endfor %}
   </div>
   <p class="suggest-cta">Know someone who's coping? <a href="/suggest">Suggest a figure &rarr;</a></p>
+  <p class="suggest-cta">Don't see who you're looking for? <a href="/instant">Get an instant cope score &rarr;</a></p>
 </section>
 
 <!-- SUBMIT CTA -->
@@ -106,9 +139,16 @@
     {% endif %}
     <footer class="card-foot">
       <a class="card-link" href="/v/{{ a.slug }}">Read the autopsy &rarr;</a>
-      <a class="card-link faded" href="{{ a.url }}" rel="noopener" target="_blank">Original</a>
+      <a class="card-link faded" href="{{ a.url }}" rel="noopener noreferrer" target="_blank">Original</a>
     </footer>
   </article>
   {% endfor %}
 </section>
+{% if total_pages is defined and total_pages > 1 %}
+<nav style="display:flex;justify-content:center;align-items:center;gap:12px;padding:2rem 0;">
+    {% if page > 1 %}<a href="?page={{ page - 1 }}" style="padding:8px 16px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.15);border-radius:6px;color:inherit;text-decoration:none;">&laquo; Prev</a>{% endif %}
+    <span style="opacity:0.6;font-size:0.9rem;">Page {{ page }} of {{ total_pages }}</span>
+    {% if page < total_pages %}<a href="?page={{ page + 1 }}" style="padding:8px 16px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.15);border-radius:6px;color:inherit;text-decoration:none;">Next &raquo;</a>{% endif %}
+</nav>
+{% endif %}
 {% endblock %}

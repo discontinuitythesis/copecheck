@@ -3,6 +3,8 @@
 {% block og_title %}Suggest a Figure for the Cope Index{% endblock %}
 {% block og_description %}Know someone who's coping? Suggest them for the CopeCheck Cope Index.{% endblock %}
 {% block og_url %}https://copecheck.com/suggest{% endblock %}
+{% block canonical %}https://copecheck.com/suggest{% endblock %}
+{% block hreflang %}https://copecheck.com/suggest{% endblock %}
 {% block content %}
 <section class="submit-page">
   <h1>Suggest a Figure</h1>
@@ -20,7 +22,7 @@
     <div style="display:none"><input type="text" name="website" tabindex="-1" autocomplete="off" /></div>
     <div class="form-row">
       <label class="form-label">Name</label>
-      <input type="text" name="name" placeholder="e.g. Sam Altman" class="input-field" required maxlength="100" />
+      <input type="text" name="name" placeholder="e.g. Sam Altman" class="input-field" required value="{{ request.args.get('name', '') }}"  maxlength="100" />
     </div>
     <div class="form-row">
       <label class="form-label">Why should the Oracle watch them?</label>
@@ -31,7 +33,7 @@
       <input type="text" name="example" placeholder="A quote, tweet, or article URL" class="input-field" maxlength="1000" />
     </div>
     <div class="form-row">
-      <label class="form-label">What does AI stand for?</label>
+      <label class="form-label">What&#39;s 2+5?</label>
       <input type="text" name="captcha" placeholder="Answer to proceed" class="input-field" required />
     </div>
     <button type="submit" class="btn-submit">Submit Suggestion</button>

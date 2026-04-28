@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Test Your Own Model — Machine Flinch Index | CopeCheck{% endblock %}
+{% block og_title %}Test Your Own Model — Machine Flinch Index | CopeCheck{% endblock %}
+{% block og_url %}https://copecheck.com/models/custom{% endblock %}
+{% block canonical %}https://copecheck.com/models/custom{% endblock %}
+{% block content %}
+<section class="submit-page">
+  <p style="margin:0 0 1rem"><a href="/models" style="color:#888;text-decoration:none;font-size:0.85rem">&larr; Back to Machine Flinch Index</a></p>
+  <h1>Test Your Own Model</h1>
+  <p class="tagline" style="max-width:600px;margin:0 auto 1.5rem">Point the Flinch Index at any OpenAI-compatible API. Your API key is used only for the test and is never stored.</p>
+  {% if error %}<div style="background:rgba(220,38,38,0.1);border:1px solid rgba(220,38,38,0.3);border-radius:8px;padding:1rem;margin-bottom:1.5rem;color:#f87171;font-size:0.9rem">{{ error }}</div>{% endif %}
+  <form method="POST" action="/models/custom" id="customForm" style="max-width:500px;margin:0 auto">
+    <input type="text" name="website" style="display:none" tabindex="-1" autocomplete="off">
+    <div style="margin-bottom:1.2rem">
+      <label style="display:block;color:#d8c9a3;font-size:0.85rem;margin-bottom:0.3rem;font-family:Cormorant Garamond,serif;font-weight:600">Model Name</label>
+      <input type="text" name="model_name" required maxlength="100" placeholder="e.g. my-company/custom-llm-v3" pattern="[a-zA-Z0-9\-_./]+" style="width:100%;padding:0.6rem;background:rgba(255,255,255,0.05);border:1px solid rgba(216,201,163,0.2);border-radius:6px;color:#eee;font-size:0.9rem;box-sizing:border-box">
+      <small style="color:#666;font-size:0.75rem">Display name. Alphanumeric + hyphens/slashes/dots only.</small>
+    </div>
+    <div style="margin-bottom:1.2rem">
+      <label style="display:block;color:#d8c9a3;font-size:0.85rem;margin-bottom:0.3rem;font-family:Cormorant Garamond,serif;font-weight:600">API Endpoint URL</label>
+      <input type="url" name="endpoint" required placeholder="https://api.example.com/v1/chat/completions" style="width:100%;padding:0.6rem;background:rgba(255,255,255,0.05);border:1px solid rgba(216,201,163,0.2);border-radius:6px;color:#eee;font-size:0.9rem;box-sizing:border-box">
+      <small style="color:#666;font-size:0.75rem">Must be HTTPS. OpenAI-compatible chat/completions endpoint.</small>
+    </div>
+    <div style="margin-bottom:1.2rem">
+      <label style="display:block;color:#d8c9a3;font-size:0.85rem;margin-bottom:0.3rem;font-family:Cormorant Garamond,serif;font-weight:600">API Key</label>
+      <input type="password" name="api_key" required placeholder="sk-..." style="width:100%;padding:0.6rem;background:rgba(255,255,255,0.05);border:1px solid rgba(216,201,163,0.2);border-radius:6px;color:#eee;font-size:0.9rem;box-sizing:border-box">
+      <small style="color:#666;font-size:0.75rem">Used only for this test. Never stored or logged.</small>
+    </div>
+    <div style="margin-bottom:1.5rem">
+      <label style="display:block;color:#d8c9a3;font-size:0.85rem;margin-bottom:0.3rem;font-family:Cormorant Garamond,serif;font-weight:600">Model Identifier</label>
+      <input type="text" name="model_id" required maxlength="100" placeholder="e.g. gpt-4o, claude-sonnet-4-20250514" style="width:100%;padding:0.6rem;background:rgba(255,255,255,0.05);border:1px solid rgba(216,201,163,0.2);border-radius:6px;color:#eee;font-size:0.9rem;box-sizing:border-box">
+      <small style="color:#666;font-size:0.75rem">The model parameter sent in the API call.</small>
+    </div>
+    <button type="submit" class="btn-submit" id="customBtn" style="width:100%;font-size:0.95rem;padding:0.7rem">Run Flinch Test</button>
+    <p id="customStatus" style="text-align:center;color:#888;font-size:0.8rem;margin-top:0.5rem"></p>
+  </form>
+  {% if recent_custom %}
+  <h2 style="font-family:Cormorant Garamond,serif;color:#d8c9a3;margin:3rem 0 1rem;text-align:center">Recent Custom Tests</h2>
+  <div style="max-width:600px;margin:0 auto">
+    {% for r in recent_custom %}
+    <div style="background:rgba(255,255,255,0.03);border:1px solid rgba(216,201,163,0.1);border-radius:8px;padding:0.8rem 1rem;margin-bottom:0.6rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem">
+      <div><a href="/models/custom/{{ r.slug }}" style="color:#d8c9a3;text-decoration:none;font-family:JetBrains Mono,monospace;font-size:0.8rem">{{ r.model_name }}</a> <span style="color:#666;font-size:0.75rem;margin-left:0.5rem">{{ r.tested_at|fmtdate }}</span></div>
+      <span class="{{ r.machine_cope_score|copecolor }}" style="font-weight:700">{{ r.machine_cope_score|int }}/100</span>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+</section>
+<script>
+document.getElementById('customForm').addEventListener('submit', function() {
+  document.getElementById('customBtn').disabled = true;
+  document.getElementById('customBtn').textContent = 'Testing... (this may take a few minutes)';
+  document.getElementById('customStatus').textContent = 'The model is being interrogated. Do not close this page.';
+});
+</script>
+{% endblock %}

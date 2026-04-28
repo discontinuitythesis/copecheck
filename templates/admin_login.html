@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Admin Login — CopeCheck{% endblock %}
+{% block content %}
+<section class="submit-page">
+  <h1>Admin Access</h1>
+  <p class="tagline">The Oracle demands credentials.</p>
+  {% if error %}
+  <div class="submit-error">{{ error }}</div>
+  {% endif %}
+  <form class="submit-form active" method="POST" action="/admin/login">
+    <div class="form-row">
+      <label class="form-label">Password</label>
+      <input type="password" name="password" class="input-field" required autofocus />
+    </div>
+    <button type="submit" class="btn-submit">Enter</button>
+  </form>
+</section>
+{% endblock %}
