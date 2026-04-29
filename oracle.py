@@ -19,11 +19,6 @@ OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
 OPENROUTER_FALLBACK_MODEL = os.environ.get("OPENROUTER_FALLBACK_MODEL", "google/gemini-2.5-flash-preview-05-20")
 OPENROUTER_FREE_MODELS = ["minimax/minimax-m2.5:free", "google/gemma-4-31b-it:free"]
 
-# NVIDIA NIM API (free tier — used for instant cope scoring)
-NVIDIA_NIM_API_KEY = os.environ.get("NVIDIA_NIM_API_KEY", "").strip()
-NVIDIA_NIM_URL = "https://integrate.api.nvidia.com/v1/chat/completions"
-NVIDIA_NIM_MODEL = os.environ.get("NVIDIA_NIM_MODEL", "deepseek-ai/deepseek-v3.2")
-NVIDIA_NIM_FREE_MODELS = ["minimaxai/minimax-m2.7", "z-ai/glm-5.1"]
 
 # MiniMax API (direct, OpenAI-compatible)
 MINIMAX_API_KEY = os.environ.get("MINIMAX_API_KEY", "").strip()
@@ -236,40 +231,6 @@ def _call_openrouter(model: str, system: str, user: str, timeout: int = 180):
     return str(content).strip(), 0  # no price tracking for OpenRouter
 
 
-def _call_nvidia(model: str, system: str, user: str, timeout: int = 180):
-    """Call NVIDIA NIM API (OpenAI-compatible). Free tier, 40 req/min."""
-    if not NVIDIA_NIM_API_KEY:
-        raise RuntimeError("NVIDIA_NIM_API_KEY is not set")
-    payload = {
-        "model": model,
-        "messages": [
-            {"role": "system", "content": system},
-            {"role": "user", "content": user},
-        ],
-        "max_tokens": 4096,
-    }
-    resp = requests.post(
-        NVIDIA_NIM_URL,
-        headers={
-            "Authorization": f"Bearer {NVIDIA_NIM_API_KEY}",
-            "Content-Type": "application/json",
-        },
-        json=payload,
-        timeout=timeout,
-    )
-    resp.raise_for_status()
-    data = resp.json()
-    choices = data.get("choices") or []
-    if not choices:
-        raise RuntimeError(f"NVIDIA NIM returned no choices: {json.dumps(data)[:400]}")
-    content = choices[0].get("message", {}).get("content", "")
-    # Some NVIDIA models (e.g. Nemotron) put content in reasoning_content instead
-    if not content:
-        content = choices[0].get("message", {}).get("reasoning_content", "")
-    if isinstance(content, dict):
-        content = content.get("text") or json.dumps(content)
-    return str(content).strip(), 0  # free tier, no price
-
 
 def _call_minimax(model, system, user, timeout=180):
     """Call MiniMax API directly (OpenAI-compatible). Fast and cheap."""
@@ -373,17 +334,6 @@ def consult(title: str, url: str, source: str, article_text: str) -> dict:
             last_err = e
             log.warning("consult MiniMax failed: %s", e)
 
-    # Fallback 1: NVIDIA NIM free models
-    if NVIDIA_NIM_API_KEY:
-        for nim_model in NVIDIA_NIM_FREE_MODELS:
-            try:
-                raw_text, price = _call_nvidia(nim_model, SYSTEM_PROMPT, user_block, timeout=120)
-                log.info("consult via NVIDIA NIM model=%s", nim_model)
-                return _parse_verdict(title, url, source, raw_text, f"nvidia/{nim_model}", price)
-            except Exception as e:
-                last_err = e
-                log.warning("consult NVIDIA NIM %s failed: %s", nim_model, e)
-
     # Fallback 1: Gemini AI Studio (Gemma 4 - free)
     if GEMINI_API_KEY:
         try:
@@ -451,22 +401,6 @@ def score_cope(figure_name: str, figure_title: str, quote: str,
         except Exception as e:
             last_err = e
             log.warning("score_cope MiniMax failed: %s", e)
-
-    # Fallback 1: NVIDIA NIM free models
-    if NVIDIA_NIM_API_KEY:
-        for nim_model in NVIDIA_NIM_FREE_MODELS:
-            try:
-                t0 = time.time()
-                raw, price = _call_nvidia(nim_model, COPE_SCORING_PROMPT, user_block, timeout=120)
-                dt = time.time() - t0
-                model_name = f"nvidia/{nim_model}"
-                log.info("score_cope via NVIDIA NIM model=%s figure=%s secs=%.1f",
-                         nim_model, figure_name, dt)
-                result = _parse_cope(raw, model_name, price)
-                return result
-            except Exception as e:
-                last_err = e
-                log.warning("score_cope NVIDIA NIM %s failed: %s", nim_model, e)
 
     # Fallback 1: Gemini AI Studio (Gemma 4 - free)
     if GEMINI_API_KEY:
@@ -831,17 +765,6 @@ def score_instant(name: str, research_text: str) -> tuple:
         except Exception as e:
             last_err = e
             log.warning("instant scoring MiniMax failed: %s", e)
-
-    # Fallback 1: NVIDIA NIM free models (fastest, ~5-15s)
-    if NVIDIA_NIM_API_KEY:
-        for nim_model in NVIDIA_NIM_FREE_MODELS:
-            try:
-                raw, price = _call_nvidia(nim_model, INSTANT_SCORING_PROMPT, user_block, timeout=15)
-                log.info("instant scoring via NVIDIA NIM model=%s figure=%s", nim_model, name)
-                return raw, price, f"nvidia/{nim_model}"
-            except Exception as e:
-                last_err = e
-                log.warning("instant scoring NVIDIA NIM %s failed: %s", nim_model, e)
 
     # Fallback 1: Gemini AI Studio (Gemma 4 - free, ~15-65s)
     if GEMINI_API_KEY:
