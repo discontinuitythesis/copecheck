@@ -300,7 +300,9 @@ def _call_minimax(model, system, user, timeout=180):
     content = choices[0].get("message", {}).get("content", "")
     if isinstance(content, dict):
         content = content.get("text") or json.dumps(content)
-    return str(content).strip(), 0  # cheap, no price tracking
+    # Strip <think> tags from MiniMax reasoning before returning
+    content = re.sub(r"<think>.*?</think>", "", str(content), flags=re.DOTALL).strip()
+    return content, 0  # cheap, no price tracking
 
 
 def _call_gemini(model, system, user, timeout=180):
