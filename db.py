@@ -80,6 +80,7 @@ CREATE TABLE IF NOT EXISTS url_submissions (
     error_msg   TEXT,
     submitted_by TEXT DEFAULT 'anonymous',
     ip_hash     TEXT,
+    referrer    TEXT DEFAULT '',
     created_at  TEXT DEFAULT CURRENT_TIMESTAMP,
     processed_at TEXT
 );
@@ -90,6 +91,7 @@ CREATE TABLE IF NOT EXISTS comments (
     author_name TEXT DEFAULT 'Anonymous',
     body        TEXT NOT NULL,
     ip_hash     TEXT,
+    referrer    TEXT DEFAULT '',
     created_at  TEXT DEFAULT CURRENT_TIMESTAMP
 );
 CREATE INDEX IF NOT EXISTS idx_comments_slug ON comments(article_slug, created_at ASC);
@@ -757,6 +759,7 @@ CREATE TABLE IF NOT EXISTS feedback (
     email       TEXT,
     message     TEXT NOT NULL,
     ip_hash     TEXT,
+    referrer    TEXT DEFAULT '',
     created_at  TEXT DEFAULT CURRENT_TIMESTAMP
 );
 CREATE INDEX IF NOT EXISTS idx_feedback_created ON feedback(created_at DESC);
@@ -768,12 +771,12 @@ def init_feedback():
         c.executescript(FEEDBACK_SCHEMA)
 
 
-def add_feedback(name, email, message, ip_hash):
+def add_feedback(name, email, message, ip_hash, referrer=""):
     with conn() as c:
         cur = c.execute(
-            """INSERT INTO feedback (name, email, message, ip_hash)
-               VALUES (?, ?, ?, ?)""",
-            ((name or "")[:100], (email or "")[:200], message[:5000], ip_hash),
+            """INSERT INTO feedback (name, email, message, ip_hash, referrer)
+               VALUES (?, ?, ?, ?, ?)""",
+            ((name or "")[:100], (email or "")[:200], message[:5000], ip_hash, (referrer or "")[:500]),
         )
         return True
 

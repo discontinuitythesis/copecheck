@@ -580,7 +580,7 @@ def _record_feedback_rate_limit(ip_hash):
     _feedback_rate_store[ip_hash].append(now)
 
 
-def _notify_feedback(name, email, message):
+def _notify_feedback(name, email, message, referrer=""):
     """Send feedback notification via n8n webhook."""
     webhook_url = os.environ.get("N8N_FEEDBACK_WEBHOOK_URL") or N8N_WEBHOOK_URL
     if not webhook_url:
@@ -591,6 +591,7 @@ def _notify_feedback(name, email, message):
             "name": name or "(anonymous)",
             "email": email or "(not provided)",
             "message": message,
+            "referrer": referrer or "unknown",
             "timestamp": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
         }, timeout=5)
     except Exception as e:
@@ -624,10 +625,11 @@ def contact_handler():
 
     name = (request.form.get("name") or "").strip()[:100]
     email = (request.form.get("email") or "").strip()[:200]
+    referrer = (request.form.get("referrer") or "").strip()[:500]
 
-    db.add_feedback(name, email, message, ip_hash)
+    db.add_feedback(name, email, message, ip_hash, referrer=referrer)
     _record_feedback_rate_limit(ip_hash)
-    _notify_feedback(name, email, message)
+    _notify_feedback(name, email, message, referrer=referrer)
 
     return render_template("contact.html",
                          success="Message received. The Oracle acknowledges your existence.")

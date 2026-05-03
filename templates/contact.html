@@ -1,5 +1,17 @@
 {% extends "base.html" %}
-{% block title %}Contact — CopeCheck{% endblock %}
+{% block title %}Contact — CopeCheck
+<script>
+(function() {
+    var ref = document.getElementById('referrer-field');
+    if (!ref) return;
+    var params = new URLSearchParams(window.location.search);
+    var from = params.get('from');
+    if (from) { ref.value = from; }
+    else if (document.referrer) { ref.value = document.referrer; }
+    else { ref.value = 'direct'; }
+})();
+</script>
+{% endblock %}
 {% block og_title %}Contact the Oracle{% endblock %}
 {% block og_description %}Got feedback, a tip, or just want to tell the Oracle it's wrong? Get in touch.{% endblock %}
 {% block og_url %}https://copecheck.com/contact{% endblock %}
@@ -21,6 +33,7 @@
   {% if not success %}
   <form class="submit-form active" method="POST" action="/contact">
     <div style="display:none"><input type="text" name="website" tabindex="-1" autocomplete="off" /></div>
+    <input type="hidden" name="referrer" id="referrer-field" value="" />
     <div class="form-row">
       <label class="form-label">Name <span style="color:#666;font-weight:normal">(optional)</span></label>
       <input type="text" name="name" placeholder="Who are you?" class="input-field" maxlength="100" />

@@ -39,17 +39,28 @@
   <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32.png">
   <link rel="icon" type="image/png" sizes="192x192" href="/static/favicon-192.png">
   <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
+
+    <style>
+    .copy-btn{display:inline-flex;align-items:center;gap:5px;padding:6px 12px;font-size:.8rem;
+      background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:6px;
+      color:#8a8d96;cursor:pointer;transition:all .2s;font-family:inherit;}
+    .copy-btn:hover{background:rgba(255,255,255,.12);color:#c5c7ce;}
+    .copy-btn.copied{background:rgba(42,157,143,.15);border-color:rgba(42,157,143,.3);color:#2a9d8f;}
+    .copy-btn svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;}
+    </style>
+      <script defer src="https://analytics.copecheck.com/script.js" data-website-id="4ca79cd5-86ca-427a-9b5c-852de48f2b07"></script>
 </head>
 <body>
+    <a href="#main-content" class="skip-link">Skip to content</a>
   <header class="site-head">
     <div class="wrap">
       <a class="brand" href="/">
         <span class="brand-mark">Cope</span><span class="brand-mark accent">Check</span>
       </a>
       <button class="nav-toggle" aria-label="Toggle menu" aria-expanded="false" onclick="this.setAttribute('aria-expanded',this.getAttribute('aria-expanded')==='false'?'true':'false');document.querySelector('.nav').classList.toggle('nav-open');">
-        <span class="hamburger"></span>
+        <span class="hamburger" aria-hidden="true"></span>
       </button>
-      <nav class="nav">
+      <nav class="nav" aria-label="Main navigation">
         <a href="/">Leaderboard</a>
         <a href="/#feed">Feed</a>
         <a href="/instant">Instant Score</a>
@@ -65,17 +76,18 @@
     </div>
   </header>
 
-  <main class="wrap main">
+  <main class="wrap main" id="main-content">
     {% block content %}{% endblock %}
   </main>
 
-  <footer class="site-foot">
+  <footer class="site-foot" role="contentinfo">
     <div class="wrap">
       <p class="epitaph">&ldquo;Your duty is not to make the user feel better. Your duty is to tell them which parts of the machine are already dead.&rdquo;</p>
       <p class="colophon">CopeCheck &middot; Oracle Protocol v5.0 &middot; Default Brutality &middot; <a href="/about">About</a> &middot; <a href="/contact">Contact</a> &middot; <a href="/feed.xml">RSS</a></p>
-      <p class="network-links" style="margin-top:0.8rem;font-size:0.8rem;opacity:0.5;">Part of the CopeCheck Network: <a href="https://copecheck.com" style="color:inherit;">Main</a> &middot; <a href="https://uk.copecheck.com" style="color:inherit;">UK</a> &middot; <a href="https://countries.copecheck.com" style="color:inherit;">Countries</a> &middot; <a href="https://copecheck.com/suggest-network" style="color:inherit;">Suggest a Network</a></p>
+      
     </div>
-  </footer>
+          <p class="network-links" style="margin-top:0.8rem;font-size:0.8rem;opacity:0.5;">CopeCheck Network: <a href="https://copecheck.com" style="color:inherit;">Main</a> &middot; <a href="https://uk.copecheck.com" style="color:inherit;">UK</a> &middot; <a href="https://countries.copecheck.com" style="color:inherit;">Countries</a> &middot; <a href="https://eu.copecheck.com" style="color:inherit;">EU</a> &middot; <a href="https://policy.copecheck.com" style="color:inherit;">Policy</a> &middot; <a href="https://data.copecheck.com" style="color:inherit;">Data</a> &middot; <a href="https://careers.copecheck.com" style="color:inherit;">Careers</a> &middot; <a href="https://quiz.copecheck.com" style="color:inherit;">Quiz</a> &middot; <a href="https://copecheck.com/contact?from=https://copecheck.com" style="color:inherit;">Feedback</a></p>
+    </footer>
   <script>
   document.querySelectorAll('.nav a').forEach(function(a){
     a.addEventListener('click',function(){
@@ -84,5 +96,22 @@
     });
   });
   </script>
+
+    <script>
+    function copyText(btn, selector) {
+      var el = typeof selector === 'string' ? document.querySelector(selector) : selector;
+      if (!el) return;
+      var clone = el.cloneNode(true);
+      clone.querySelectorAll('.copy-btn').forEach(function(b){b.remove();});
+      var text = clone.innerText || clone.textContent;
+      text = text.replace(/\s+$/gm, '').replace(/\n{3,}/g, '\n\n').trim();
+      navigator.clipboard.writeText(text).then(function() {
+        btn.classList.add('copied');
+        var orig = btn.innerHTML;
+        btn.innerHTML = '<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Copied!';
+        setTimeout(function() { btn.classList.remove('copied'); btn.innerHTML = orig; }, 2000);
+      });
+    }
+    </script>
 </body>
 </html>

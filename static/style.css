@@ -633,3 +633,28 @@ textarea.input-field { resize: vertical; min-height: 80px; }
   .submit-page table td:nth-child(8) { display: none; }
   .submit-page table { font-size: 0.78rem; }
 }
+
+
+/* === Agent-friendly interactivity === */
+a, button, [role="button"], input[type="submit"], input[type="button"],
+.nav-toggle, .copy-btn, [onclick] {
+  cursor: pointer;
+}
+button, a, input, select, textarea {
+  min-height: 8px;
+  min-width: 8px;
+}
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: 0;
+  background: #000;
+  color: #fff;
+  padding: 8px 16px;
+  z-index: 10000;
+  font-size: 0.9rem;
+  text-decoration: none;
+}
+.skip-link:focus {
+  top: 0;
+}
