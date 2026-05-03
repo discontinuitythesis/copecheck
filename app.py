@@ -182,11 +182,17 @@ def track_pageview():
 
 @app.after_request
 def add_cache_headers(response):
-    if response.content_type and "text/html" in response.content_type:
-        response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate, s-maxage=0, max-age=0"
-        response.headers["Pragma"] = "no-cache"
-        response.headers["Expires"] = "Thu, 01 Jan 1970 00:00:00 GMT"
-        response.headers["Surrogate-Control"] = "no-store"
+    """Set cache headers for Cloudflare CDN."""
+    path = request.path
+    if path.startswith('/static/'):
+        response.headers['Cache-Control'] = 'public, max-age=604800, stale-while-revalidate=86400'
+    elif path.startswith('/api/'):
+        response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    elif path.endswith('.xml'):
+        response.headers['Cache-Control'] = 'public, max-age=3600'
+    else:
+        response.headers['Cache-Control'] = 'public, max-age=300, stale-while-revalidate=3600, stale-if-error=86400'
+    response.headers.setdefault('Vary', 'Accept-Encoding')
     return response
 
 
