@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% block meta_description %}Contact CopeCheck with tips, corrections, sources, or objections.{% endblock %}
 {% block title %}Contact — CopeCheck
 <script>
 (function() {
@@ -44,7 +45,7 @@
     </div>
     <div class="form-row">
       <label class="form-label">Message</label>
-      <textarea name="message" placeholder="Speak your mind." rows="5" maxlength="5000" class="input-field" required></textarea>
+      <textarea name="message" placeholder="Send a tip, correction, source, or objection." rows="5" maxlength="5000" class="input-field" required></textarea>
     </div>
     <button type="submit" class="btn-submit">Send Message</button>
   </form>

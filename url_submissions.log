@@ -1,0 +1,22 @@
+2026-04-20 06:00:01,875 INFO url_submissions | Processing 2 pending URL submissions
+2026-04-20 06:00:01,875 INFO url_submissions | [1] Extracting: https://example.com/test2 for Elon Musk
+2026-04-20 06:00:01,926 ERROR trafilatura.downloads | not a 200 response: 404 for URL https://example.com/test2
+2026-04-20 06:00:01,926 WARNING url_submissions | [1] Extraction failed: Could not download URL
+2026-04-20 06:00:01,933 INFO url_submissions | [2] Extracting: https://www.youtube.com/watch?v=dQw4w9WgXcQ for Elon Musk
+2026-04-20 06:00:01,945 WARNING url_extractor | youtube-transcript-api failed: type object 'YouTubeTranscriptApi' has no attribute 'get_transcript', trying Crawl4AI
+2026-04-20 06:00:02,056 WARNING url_submissions | [2] Extraction failed: Crawl4AI HTTP 500
+2026-04-20 06:00:02,064 INFO url_submissions | Done: 0/2 scored
+2026-04-21 06:00:02,334 INFO url_submissions | No pending URL submissions
+2026-04-22 06:00:02,076 INFO url_submissions | No pending URL submissions
+2026-04-23 06:00:02,373 INFO url_submissions | No pending URL submissions
+2026-04-24 06:00:01,616 INFO url_submissions | No pending URL submissions
+2026-04-25 06:00:01,840 INFO url_submissions | No pending URL submissions
+2026-04-26 06:00:02,068 INFO url_submissions | No pending URL submissions
+2026-04-27 06:00:02,065 INFO url_submissions | No pending URL submissions
+2026-04-28 06:00:01,984 INFO url_submissions | No pending URL submissions
+2026-04-29 06:00:01,992 INFO url_submissions | No pending URL submissions
+2026-04-30 06:00:02,209 INFO url_submissions | No pending URL submissions
+2026-05-01 06:00:02,144 INFO url_submissions | No pending URL submissions
+2026-05-02 06:00:01,728 INFO url_submissions | No pending URL submissions
+2026-05-03 06:00:01,870 INFO url_submissions | No pending URL submissions
+2026-05-04 06:00:02,435 INFO url_submissions | No pending URL submissions

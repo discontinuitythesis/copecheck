@@ -25,6 +25,17 @@ DB_PATH = os.environ.get(
 )
 
 STRAICO_API_KEY = os.environ.get("STRAICO_API_KEY", "").strip()
+STRAICO_API_KEY_2 = os.environ.get("STRAICO_API_KEY_2", "").strip()
+_mc_straico_keys = [k for k in [STRAICO_API_KEY, STRAICO_API_KEY_2] if k]
+_mc_straico_idx = 0
+def _next_mc_straico_key():
+    global _mc_straico_idx
+    if not _mc_straico_keys:
+        return ""
+    key = _mc_straico_keys[_mc_straico_idx % len(_mc_straico_keys)]
+    _mc_straico_idx += 1
+    return key
+
 STRAICO_CHAT_URL = "https://api.straico.com/v0/chat/completions"
 STRAICO_MODELS_URL = "https://api.straico.com/v1/models"
 
@@ -125,10 +136,10 @@ def _provider_from_model(model_name):
 
 
 def call_straico(model, messages, timeout=120):
-    if not STRAICO_API_KEY:
+    if not _mc_straico_keys:
         raise RuntimeError("STRAICO_API_KEY not set")
     payload = {"model": model, "messages": messages}
-    headers = {"Authorization": f"Bearer {STRAICO_API_KEY}", "Content-Type": "application/json"}
+    headers = {"Authorization": f"Bearer {_next_mc_straico_key()}", "Content-Type": "application/json"}
     resp = requests.post(STRAICO_CHAT_URL, json=payload, headers=headers, timeout=timeout)
     resp.raise_for_status()
     data = resp.json()
@@ -168,8 +179,8 @@ def call_openai_compatible(endpoint, api_key, model_id, messages, timeout=60):
 
 
 def get_straico_models():
-    if not STRAICO_API_KEY: return []
-    headers = {"Authorization": f"Bearer {STRAICO_API_KEY}"}
+    if not _mc_straico_keys: return []
+    headers = {"Authorization": f"Bearer {_next_mc_straico_key()}"}
     try:
         resp = requests.get(STRAICO_MODELS_URL, headers=headers, timeout=30)
         resp.raise_for_status()

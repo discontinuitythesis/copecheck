@@ -211,8 +211,10 @@ def index2():
 def index():
     leaderboard = db.get_leaderboard()
     page = request.args.get("page", 1, type=int)
+    show_all = request.args.get("show_all", "0") == "1"
     per_page = 20
-    all_items = db.recent_analysed(limit=200)
+    min_relevance = None if show_all else 35
+    all_items = db.recent_analysed(limit=2000, min_relevance=min_relevance)
     total = db.counts().get("analysed", 0)
     total_pages = max(1, (len(all_items) + per_page - 1) // per_page)
     page = max(1, min(page, total_pages))
@@ -220,7 +222,8 @@ def index():
     cope_of_week = db.cope_of_the_week()
     return render_template("index.html", leaderboard=leaderboard,
                           items=items, total=total, cope_of_week=cope_of_week,
-                          page=page, total_pages=total_pages)
+                          page=page, total_pages=total_pages,
+                          show_all=show_all, filtered_total=len(all_items))
 
 
 

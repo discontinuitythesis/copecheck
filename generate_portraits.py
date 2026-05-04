@@ -7,7 +7,7 @@ import time
 import yaml
 from pathlib import Path
 
-STRAICO_API_KEY = os.environ.get("STRAICO_API_KEY", "ya-e9gJ18QpnfkSQLBgMxImEAqKyn0JFQvQH5u474GZctpNUvm0")
+STRAICO_API_KEY = os.environ.get("STRAICO_API_KEY", "jw-yhcWomvqYFEQR0VQuStQaNF09llybQjdYpxYSPnYKZ2jNLQg")
 STRAICO_URL = "https://api.straico.com/v1/image/generation"
 FIGURES_PATH = Path(__file__).parent / "figures.yaml"
 PHOTOS_DIR = Path(__file__).parent / "static" / "photos"

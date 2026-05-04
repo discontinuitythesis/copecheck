@@ -187,15 +187,16 @@ def insert_pending(url, title, source, published, snippet, body):
             return None
 
 
-def set_verdict(slug, verdict_md, one_liner, model, price):
+def set_verdict(slug, verdict_md, one_liner, model, price, relevance=None):
     with conn() as c:
         cur = c.execute(
             """UPDATE articles
                SET verdict_md = ?, one_liner = ?, model = ?, price = ?,
+                   relevance = ?,
                    status = 'analysed', analysed_at = CURRENT_TIMESTAMP,
                    error = NULL
                WHERE slug = ?""",
-            (verdict_md, one_liner, model, price, slug),
+            (verdict_md, one_liner, model, price, relevance, slug),
         )
 
 
@@ -216,14 +217,23 @@ def pending_for_analysis(limit=25):
         return [dict(r) for r in cur.fetchall()]
 
 
-def recent_analysed(limit=60):
+def recent_analysed(limit=60, min_relevance=None):
     with conn() as c:
-        cur = c.execute(
-            """SELECT * FROM articles
-               WHERE status = 'analysed' AND verdict_md IS NOT NULL
-               ORDER BY analysed_at DESC LIMIT ?""",
-            (limit,),
-        )
+        if min_relevance is not None:
+            cur = c.execute(
+                """SELECT * FROM articles
+                   WHERE status = 'analysed' AND verdict_md IS NOT NULL
+                     AND (relevance IS NULL OR relevance >= ?)
+                   ORDER BY analysed_at DESC LIMIT ?""",
+                (min_relevance, limit),
+            )
+        else:
+            cur = c.execute(
+                """SELECT * FROM articles
+                   WHERE status = 'analysed' AND verdict_md IS NOT NULL
+                   ORDER BY analysed_at DESC LIMIT ?""",
+                (limit,),
+            )
         return [dict(r) for r in cur.fetchall()]
 
 

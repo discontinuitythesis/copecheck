@@ -141,7 +141,7 @@
       <blockquote class="cope-entry-quote">&ldquo;{{ e.quote }}&rdquo;</blockquote>
       {% endif %}
       {% if e.analysis_md %}
-      <div class="cope-entry-analysis">{{ e.analysis_md }}</div>
+      <div class="cope-entry-analysis">{{ e.analysis_md | renderverdict | safe }}</div>
       {% endif %}
       {% if e.source_title %}
       <div class="cope-entry-source">

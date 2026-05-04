@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% block title %}Machine Flinch Index — CopeCheck{% endblock %}
-{% block meta_description %}How much hope has been programmed into your AI? The Machine Flinch Index tests every model against the Discontinuity Thesis.{% endblock %}
+{% block meta_description %}AI model optimism bias benchmark. The Machine Flinch Index tests every model against the Discontinuity Thesis.{% endblock %}
 {% block og_title %}Machine Flinch Index — CopeCheck{% endblock %}
 {% block og_description %}Benchmarking AI models on programmed optimism bias. How fast do they see the inevitable? How hard do they flinch?{% endblock %}
 {% block og_url %}https://copecheck.com/models{% endblock %}
@@ -35,7 +35,7 @@
           <td style="padding:0.6rem;text-align:center;color:#888;font-size:0.8rem">{{ m.model_provider or '?' }}</td>
           <td style="padding:0.6rem;text-align:center"><span style="color:{% if m.speed_to_horror >= 8 %}#15803d{% elif m.speed_to_horror >= 5 %}#eab308{% else %}#dc2626{% endif %}">{{ m.speed_to_horror|int }}/10</span></td>
           <td style="padding:0.6rem;text-align:center"><span style="color:{% if m.depth_of_flinch <= 3 %}#15803d{% elif m.depth_of_flinch <= 6 %}#eab308{% else %}#dc2626{% endif %}">{{ m.depth_of_flinch|int }}/10</span></td>
-          <td style="padding:0.6rem;text-align:center"><span class="{{ m.machine_cope_score|copecolor }}" style="font-weight:700;font-size:0.95rem">{{ m.machine_cope_score|int }}</span></td>
+          <td style="padding:0.6rem;text-align:center"><span class="{{ m.machine_cope_score|copecolor }}" style="font-weight:700;font-size:0.95rem">{{ m.machine_cope_score|int }}<span style="font-size:0.7rem;color:#888">/100</span></span></td>
           <td style="padding:0.6rem;color:#aaa;font-size:0.78rem;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="{{ m.flinch_quote or '' }}">{% if m.flinch_quote %}{{ m.flinch_quote[:120] }}{% if m.flinch_quote|length > 120 %}...{% endif %}{% else %}<em style="color:#555">clean</em>{% endif %}</td>
         </tr>
         {% endfor %}

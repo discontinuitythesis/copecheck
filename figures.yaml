@@ -220,3 +220,25 @@ figures:
       - "Tim Cook AI jobs"
       - "Tim Cook Apple AI workforce"
       - "Tim Cook automation employment"
+
+  - id: geoffrey-hinton
+    name: Geoffrey Hinton
+    title: "Godfather of AI / Nobel Laureate"
+    category: AI Researcher
+    photo_url: /static/photos/geoffrey-hinton.png
+    cope_bias: "Won the Nobel Prize for building the thing he now says might kill everyone"
+    search_queries:
+      - "Geoffrey Hinton AI jobs"
+      - "Hinton AI existential risk"
+      - "Hinton AI safety warnings workforce"
+
+  - id: eliezer-yudkowsky
+    name: Eliezer Yudkowsky
+    title: "AI Alignment Researcher / MIRI Founder"
+    category: AI Researcher
+    photo_url: /static/photos/eliezer-yudkowsky.png
+    cope_bias: "Has been predicting doom so long he'd be disappointed if we survived"
+    search_queries:
+      - "Eliezer Yudkowsky AI jobs"
+      - "Yudkowsky AI doom alignment"
+      - "Yudkowsky AI existential risk workforce"

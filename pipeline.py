@@ -23,6 +23,64 @@ import db
 import oracle
 import sources
 
+
+def _score_relevance(title, snippet, one_liner, verdict_md):
+    """Score 0-100 how relevant an article is to AI cope discourse."""
+    import re as _re
+    text = " ".join(filter(None, [title, snippet, one_liner])).lower()
+    verdict = (verdict_md or "")[:2000].lower()
+    score = 20
+    high_kw = [
+        r"\bcope\b", r"\bcoping\b", r"\bcopium\b", r"\bdenial\b",
+        r"\bdeflect", r"\bdownplay", r"\bminimis", r"\bminimiz", r"\breassur",
+        r"\bdisplac", r"\bobsolet", r"\breplace.*(?:job|work|human)",
+        r"\bai.*(?:job|work|employ|labour|labor|layoff|replac|automa)",
+        r"\b(?:job|work|employ|labour|labor|layoff).*\bai\b",
+        r"\bautomation\b.*\b(?:job|work|employ|threat|risk|replac)",
+        r"\bubi\b", r"\buniversal basic income\b",
+        r"\bfuture of work\b", r"\bpost.?work\b", r"\bjobless\b",
+        r"\bdiscontinuity\b", r"\bagent(?:ic|s)\b.*\b(?:replac|job|work|automa)",
+        r"\bwhite.?collar\b", r"\bknowledge work",
+        r"\blayoff", r"\bhiring freeze\b",
+        r"\bwage.*(?:declin|stagna|collaps|pressur)",
+        r"\bworker.*(?:displac|replac|threat|obsole)",
+    ]
+    med_kw = [
+        r"\bartificial intelligence\b", r"\bllm\b", r"\blarge language model",
+        r"\bgenerative ai\b", r"\bchatgpt\b", r"\bgpt\b",
+        r"\bautomation\b", r"\bautomat",
+        r"\bjob(?:s)?\b", r"\bemploy", r"\bunemploy",
+        r"\blabou?r\b", r"\bworkforce\b", r"\bworker",
+        r"\bwage(?:s)?\b", r"\bproductivity\b",
+        r"\bagi\b", r"\bsuperintelligence\b",
+    ]
+    low_kw = [
+        r"\bgame\b", r"\bgaming\b", r"\bsports?\b", r"\brecipe\b",
+        r"\bweather\b", r"\bcelebrit", r"\bentertainment\b",
+        r"\bmovie\b", r"\bfilm\b", r"\bmusic\b",
+    ]
+    for pat in high_kw:
+        if _re.search(pat, text, _re.IGNORECASE):
+            score += 8
+    for pat in high_kw:
+        if _re.search(pat, verdict, _re.IGNORECASE):
+            score += 3
+    for pat in med_kw:
+        if _re.search(pat, text, _re.IGNORECASE):
+            score += 3
+    for pat in med_kw:
+        if _re.search(pat, verdict, _re.IGNORECASE):
+            score += 1
+    for pat in low_kw:
+        if _re.search(pat, text, _re.IGNORECASE):
+            score -= 5
+    if verdict:
+        if _re.search(r"tangential|not.*relevant|off.?topic|puff piece|human.?interest", verdict):
+            score -= 15
+        if _re.search(r"cope.*score|cope.*level|discontinuity thesis|dt lens|oracle.*verdict", verdict):
+            score += 10
+    return max(0, min(100, score))
+
 log = logging.getLogger("pipeline")
 
 MAX_NEW_PER_RUN = int(os.environ.get("COPECHECK_MAX_NEW", "30"))
@@ -193,8 +251,11 @@ def analyse_pending() -> int:
                 article_text=row["body"] or row["snippet"] or "",
             )
             one_liner = oracle.extract_one_liner(result["verdict_md"])
+            relevance = _score_relevance(
+                row["title"], row.get("snippet", ""), one_liner, result["verdict_md"]
+            )
             db.set_verdict(slug, result["verdict_md"], one_liner,
-                          result["model"], result["price"])
+                          result["model"], result["price"], relevance=relevance)
             done += 1
             _crosslink_figures(row, result)
             time.sleep(2)

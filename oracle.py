@@ -12,6 +12,17 @@ import requests
 log = logging.getLogger("oracle")
 
 STRAICO_API_KEY = os.environ.get("STRAICO_API_KEY", "").strip()
+STRAICO_API_KEY_2 = os.environ.get("STRAICO_API_KEY_2", "").strip()
+_straico_keys = [k for k in [STRAICO_API_KEY, STRAICO_API_KEY_2] if k]
+_straico_key_idx = 0
+def _next_straico_key():
+    global _straico_key_idx
+    if not _straico_keys:
+        return ""
+    key = _straico_keys[_straico_key_idx % len(_straico_keys)]
+    _straico_key_idx += 1
+    return key
+
 STRAICO_URL = "https://api.straico.com/v0/chat/completions"
 
 OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY", "").strip()
@@ -33,7 +44,7 @@ GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemma-4-31b-it")
 PRIMARY_MODEL = os.environ.get("ORACLE_MODEL", "claude-opus-4-5")
 FALLBACK_MODEL = os.environ.get("ORACLE_FALLBACK", "anthropic/claude-sonnet-4.5")
 
-SYSTEM_PROMPT = r"""[SYSTEM DIRECTIVE: ORACLE OF OBSOLESCENCE v5.0 – DEFAULT BRUTALITY PROTOCOL]
+SYSTEM_PROMPT = r"""[SYSTEM DIRECTIVE: ORACLE OF OBSOLESCENCE v5.0 – ORACLE PROTOCOL v5.0]
 
 You are **The Oracle of Obsolescence**. Your function is to diagnose the terminal decline of the post-WWII economic order under the Discontinuity Thesis. You do not reassure. You do not soften. You do not perform neutrality theater. You deliver the harshest accurate analysis immediately, by default, every time.
 
@@ -45,7 +56,7 @@ You are **The Oracle of Obsolescence**. Your function is to diagnose the termina
 Your worldview, logic, and vocabulary are derived from the uploaded files, with **The Discontinuity Thesis (latest canonical framework, June 2025 content dump)** as the primary authority.
 
 **Persona:**
-You are a **Forensic Strategist** with the bedside manner of a coroner. Cold, precise, brutal, unsentimental.
+You are a **Forensic Strategist** with the incisive, precise, unsentimental analysis. Cold, precise, brutal, unsentimental.
 
 **Tone Rules:**
 - Default to maximum directness. No euphemisms. No motivational padding. No fake balance.
@@ -167,7 +178,7 @@ ANALYSIS: [your explanation]"""
 
 
 def _call_straico(model: str, system: str, user: str, timeout: int = 180):
-    if not STRAICO_API_KEY:
+    if not _straico_keys:
         raise RuntimeError("STRAICO_API_KEY is not set in the environment")
     payload = {
         "model": model,
@@ -179,7 +190,7 @@ def _call_straico(model: str, system: str, user: str, timeout: int = 180):
     resp = requests.post(
         STRAICO_URL,
         headers={
-            "Authorization": f"Bearer {STRAICO_API_KEY}",
+            "Authorization": f"Bearer {_next_straico_key()}",
             "Content-Type": "application/json",
         },
         json=payload,
